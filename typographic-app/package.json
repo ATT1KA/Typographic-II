@@ -1,32 +1,15 @@
 {
-  "name": "typographic-app",
-  "version": "1.0.0",
-  "description": "A typographic application for managing typography-related data.",
-  "main": "src/server.ts",
+  "name": "typographic-monorepo",
+  "private": true,
+  "workspaces": ["client", "server"],
+  "packageManager": "npm@10.8.2",
   "scripts": {
-    "dev": "ts-node src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "test": "jest"
-  },
-  "keywords": [
-    "typography",
-    "typescript",
-    "express"
-  ],
-  "author": "Your Name",
-  "license": "MIT",
-  "dependencies": {
-    "express": "^4.17.1",
-    "dotenv": "^10.0.0"
+    "dev": "concurrently -n client,server -c green,blue \"npm:dev --workspace=client\" \"npm:dev --workspace=server\"",
+    "build": "npm run build -w client && npm run build -w server",
+    "lint": "npm run lint -w client && npm run lint -w server",
+    "test": "npm run test -w client && npm run test -w server"
   },
   "devDependencies": {
-    "typescript": "^4.4.4",
-    "ts-node": "^10.4.0",
-    "jest": "^27.0.6",
-    "@types/jest": "^27.0.2",
-    "@types/express": "^4.17.13",
-    "eslint": "^7.32.0",
-    "prettier": "^2.4.1"
+    "concurrently": "^8.2.2"
   }
 }
