@@ -18,6 +18,10 @@ export default defineConfig({
         target: 'http://localhost:5176',
         changeOrigin: true,
       },
+      '/api-server': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+      },
     },
   },
 });

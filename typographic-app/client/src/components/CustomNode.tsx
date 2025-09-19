@@ -1,34 +1,6 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useState } from 'react';
-
-export type NodeData = {
-  label: string;
-  vertical: 'BI' | 'Political' | 'Policymaking' | 'Fundraising' | 'OSINT' | 'SCI';
-  subtype: string;
-  config?: {
-    dataSource?: {
-      type?: 'api' | 'db' | 'file';
-      endpoint?: string;
-      notes?: string;
-    };
-    transforms?: Array<
-      | { type: 'lm-studio-summary'; params: { endpoint: string; prompt: string } }
-      | { type: 'aggregation'; params?: Record<string, unknown> }
-      | { type: 'anomaly-detection'; params?: Record<string, unknown> }
-    >;
-    outputs?: string[];
-  };
-  onChange?: (partial: Partial<NodeData>) => void;
-};
-
-const headerColor: Record<NodeData['vertical'], string> = {
-  BI: '#6c5ce7',
-  Political: '#0984e3',
-  Policymaking: '#d63031',
-  Fundraising: '#e17055',
-  OSINT: '#00b894',
-  SCI: '#fdcb6e'
-};
+import { type NodeData, verticalColors } from '../types/flow';
 
 const validateUrl = (url: string) => /^https?:\/\/.+/.test(url);
 
@@ -74,7 +46,7 @@ export default function CustomNode(props: NodeProps) {
 
   return (
     <div style={{ minWidth: 280, border: selected ? '2px solid #333' : '1px solid #aaa', borderRadius: 8, background: '#fff' }}>
-      <div style={{ padding: '8px 10px', borderTopLeftRadius: 8, borderTopRightRadius: 8, background: headerColor[data.vertical], color: data.vertical === 'SCI' ? '#000' : '#fff' }}>
+  <div style={{ padding: '8px 10px', borderTopLeftRadius: 8, borderTopRightRadius: 8, background: verticalColors[data.vertical], color: data.vertical === 'SCI' ? '#000' : '#fff' }}>
         <div style={{ fontWeight: 700 }}>{data.label}</div>
         <div style={{ fontSize: 12, opacity: 0.9 }}>{data.vertical} • {data.subtype}</div>
       </div>

@@ -1,3 +1,36 @@
+# Typographic App (Dev)
+
+A Vite + React client with a TS API server and a dedicated Flow persistence server.
+
+## Dev Setup
+
+- Node.js 18+
+- Ports: Client `5173`, API `5174`, Flow `5176`
+
+## Run
+
+```pwsh
+# From monorepo root
+cd "c:\\Users\\danie\\OneDrive\\Documents\\GitHub\\Typographic II\\typographic-app"
+npm install
+npm run dev
+```
+
+- Open: `http://localhost:5173/workflow`
+- The client proxies:
+  - `/api` → `http://localhost:5176` (Flow server)
+  - `/api-server` → `http://localhost:5174` (API server)
+
+## Health Checks
+
+- API: `GET /api-server/health` (returns `{ ok: true, service: 'api', ts: <number> }`)
+- Flow: `GET /api/flow/:id` (200 when reachable)
+- UI widget: Green/Red dots in header show API and Flow status.
+
+## Notes
+
+- React deduping is enabled in Vite to avoid duplicate React instances.
+- Workflow Builder autosaves; change the `Workflow ID` input to create separate flows, persisted in `server/data/<id>.json`.
 # Typographic Application
 
 ## Overview

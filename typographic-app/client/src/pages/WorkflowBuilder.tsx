@@ -9,21 +9,15 @@ import {
   MiniMap,
   useEdgesState,
   useNodesState,
-  type Node
+  type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import CustomNode, { type NodeData } from '../components/CustomNode';
+import CustomNode from '../components/CustomNode';
+import { type NodeData, verticalColors } from '../types/flow';
 
-const verticalColors: Record<NodeData['vertical'], string> = {
-  BI: '#6c5ce7',
-  Political: '#0984e3',
-  Policymaking: '#d63031',
-  Fundraising: '#e17055',
-  OSINT: '#00b894',
-  SCI: '#fdcb6e'
-};
+const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
 const seedNodes: Node<NodeData>[] = [
   {
@@ -109,7 +103,7 @@ export default function WorkflowBuilder() {
   const [workflowId, setWorkflowId] = useState('default');
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
-  const apiUrl = `/api/flow/${workflowId}`;
+  const apiUrl = `${API_BASE}/flow/${workflowId}`;
 
   const attachCallbacks = useCallback((nds: Node<NodeData>[]) => {
     return nds.map((n) => ({
