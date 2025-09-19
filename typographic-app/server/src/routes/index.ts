@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { searchRouter } from './search.js';
-import { workflowsRouter } from './workflows.js';
-import { dashboardsRouter } from './dashboards.js';
-import { reportsRouter } from './reports.js';
+import { searchRouter } from './search';
+import { workflowsRouter } from './workflows';
+import { dashboardsRouter } from './dashboards';
+import { reportsRouter } from './reports';
 
 const router = Router();
 

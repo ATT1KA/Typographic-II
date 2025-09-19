@@ -1,6 +1,6 @@
 import http from 'http';
-import app from './app.js';
-import { logger } from './utils/logger.js';
+import app from './app';
+import { logger } from './utils/logger';
 
 const PORT = Number(process.env.PORT || 5174);
 

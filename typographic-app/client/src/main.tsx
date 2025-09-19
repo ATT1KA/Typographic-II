@@ -1,12 +1,13 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import './styles/global.css';
-import Explorer from './pages/Explorer';
-import WorkflowBuilder from './pages/WorkflowBuilder';
-import DashboardBuilder from './pages/DashboardBuilder';
-import Reports from './pages/Reports';
-import Onboarding from './pages/Onboarding';
+
+const Explorer = lazy(() => import('./pages/Explorer'));
+const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'));
+const DashboardBuilder = lazy(() => import('./pages/DashboardBuilder'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 
 function App() {
   return (
@@ -22,17 +23,21 @@ function App() {
           </nav>
         </header>
         <main className="main">
-          <Routes>
-            <Route path="/" element={<Onboarding />} />
-            <Route path="/explorer" element={<Explorer />} />
-            <Route path="/workflow" element={<WorkflowBuilder />} />
-            <Route path="/dashboards" element={<DashboardBuilder />} />
-            <Route path="/reports" element={<Reports />} />
-          </Routes>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<Onboarding />} />
+              <Route path="/explorer" element={<Explorer />} />
+              <Route path="/workflow" element={<WorkflowBuilder />} />
+              <Route path="/dashboards" element={<DashboardBuilder />} />
+              <Route path="/reports" element={<Reports />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </BrowserRouter>
   );
 }
+
+export default App;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App />);

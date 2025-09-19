@@ -1,7 +1,10 @@
 {
   "name": "typographic-monorepo",
   "private": true,
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "packageManager": "npm@10.8.2",
   "scripts": {
     "dev": "concurrently -n client,server -c green,blue \"npm:dev --workspace=client\" \"npm:dev --workspace=server\"",
@@ -11,5 +14,6 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
-  }
+  },
+  "dependencies": {}
 }

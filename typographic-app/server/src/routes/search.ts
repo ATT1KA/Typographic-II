@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { performSearch } from '../services/discovery.service.js';
+import { performSearch } from '../services/discovery.service';
 
 export const searchRouter = Router();
 
