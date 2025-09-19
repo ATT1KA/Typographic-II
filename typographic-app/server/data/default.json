@@ -138,8 +138,8 @@
     {
       "id": "bi-reporting-1758263648896",
       "position": {
-        "x": 598.5308845230778,
-        "y": -385.4171019443877
+        "x": 571.5287773056133,
+        "y": -607.8721214184275
       },
       "type": "custom",
       "data": {
@@ -167,28 +167,37 @@
     {
       "id": "bi-data-exploration-1758263655654",
       "position": {
-        "x": 598.610930222377,
-        "y": -119.3564249721355
+        "x": 588.3111654158218,
+        "y": -331.50844471871375
       },
       "type": "custom",
       "data": {
         "label": "BI: Data Exploration",
         "vertical": "BI",
         "subtype": "Data Exploration",
-        "config": {}
+        "config": {
+          "transforms": [
+            {
+              "type": "aggregation"
+            }
+          ]
+        }
       },
       "measured": {
         "width": 300,
-        "height": 115
+        "height": 331
       },
       "selected": false,
-      "dragging": false
+      "dragging": false,
+      "width": 300,
+      "height": 331,
+      "resizing": false
     },
     {
       "id": "osint-technical-mapping-1758263050758-copy-1758265386491-571",
       "position": {
-        "x": -397.77654585200844,
-        "y": -468.9168686587225
+        "x": -425.084272536686,
+        "y": -458.51392515979774
       },
       "type": "custom",
       "data": {

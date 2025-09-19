@@ -71,8 +71,9 @@ export default function NodeLibrary({
   // removed withAlpha helper as category bars are now full opacity
 
   const Section = ({ title, items }: { title: VerticalKey; items: LibraryItem[] }) => (
-    <details open>
+    <details open data-vertical={title}>
       <summary
+        data-title={title}
         style={{
           padding: '8px 10px',
           cursor: 'pointer',

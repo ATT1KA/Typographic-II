@@ -51,16 +51,19 @@
   display: flex; align-items: center; justify-content: space-between;
   /* reduced by ~15% for slightly less edge spacing */
   padding: 0 clamp(27px, 5.1vw, 61px);
-  /* Grey acrylic with subtle texture */
+  /* Flat, textured acrylic steel-grey */
+  /* darker steel-grey with stronger texture */
   background:
-    linear-gradient(180deg, rgba(64,66,70,0.26), rgba(26,28,30,0.34)),
-    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
-    radial-gradient(120% 120% at 90% 100%, rgba(0,0,0,0.10), rgba(0,0,0,0) 60%),
-    rgba(28,30,34,0.65);
+    linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.12)),
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0) 45%),
+    radial-gradient(120% 120% at 90% 100%, rgba(0,0,0,0.14), rgba(0,0,0,0) 50%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 4px),
+    rgba(32,34,37,0.98);
   border-bottom: 1px solid var(--control-border);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   box-shadow: 0 6px 10px rgba(0,0,0,0.22);
+  border-radius: 0 !important;
 }
 .app-nav { display: flex; gap: 16px; }
 .app-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 8px 10px; border-radius: var(--radius); }
@@ -74,6 +77,8 @@
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand-title { font-family: var(--font-mono); font-weight: 600; font-size: 18px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--text); text-shadow: 0 0 2px rgba(0,0,0,0.9); }
+/* Increase headline size ~20% while keeping vertical centering */
+.brand-title { font-size: 21.6px; line-height: 1; display: inline-flex; align-items: center; }
 .header-actions { display: flex; align-items: center; gap: var(--space-3); }
 .icon-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--control-bg); border: 1px solid var(--control-border); color: var(--text); }
 .icon-btn:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
@@ -95,17 +100,53 @@
 .rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); z-index: 15; }
 .rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
+
+/* Strong override: replace purple focus/active outline on the rail toggle */
+.rail-toggle:focus, .rail-toggle:focus-visible, .rail-toggle:active, .rail-handle .rail-toggle:active {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Remove any fallback overlay for the rail-toggle */
+.rail-toggle::after { display: none !important; }
 .rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail.open .rail-panel { transform: translateX(0); }
 /* Ensure no peek when closed */
 .rail:not(.open) .rail-panel { visibility: hidden; }
 .rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--control-border); background: rgba(20,20,20,0.65); color: var(--text); }
+.rail-panel details > summary { font-weight: 700; /* bold category title */
+  color: var(--text);
+  /* Softer outer glow: increase blur slightly and lower alpha for a subtler effect */
+  text-shadow: 0 0 3px rgba(0,0,0,0.6), 0 0 6px rgba(0,0,0,0.35);
+  /* Slightly increase letter spacing for clarity */
+  letter-spacing: 0.6px;
+}
+/* Fallback for environments where text-shadow is weak: add a duplicated pseudo element with drop-shadow */
+.rail-panel details > summary::after {
+  content: attr(data-title);
+  position: absolute;
+  pointer-events: none;
+  left: 10px; top: 8px;
+  color: transparent;
+  /* Softer fallback shadow */
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.6));
+  display: none; /* only used as an emergency fallback if needed */
+}
 .rail-section summary::-webkit-details-marker { display: none; }
 .rail-list { display: grid; gap: 8px; margin-top: 8px; }
 .rail-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--control-border); background: rgba(18,18,18,0.78); color: var(--text); backdrop-filter: blur(2px) saturate(120%); }
 .rail-item:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
 /* Add a bit of space before each new category bar */
 .rail-panel details + details summary { margin-top: var(--space-2); }
+
+/* SCI-specific tweak: halve glow opacity and add thin black stroke for readability */
+.rail-panel details[data-vertical="SCI"] > summary {
+  /* Reduce glow opacity by ~50% compared to the default */
+  /* Reduced SCI glow by ~30% (softer) */
+  text-shadow: 0 0 3px rgba(0,0,0,0.63), 0 0 6px rgba(0,0,0,0.37);
+  color: #666666; /* dark grey for SCI title */
+}
 
 /* Acrylic toast styling to match modal */
 .toast-acrylic {

@@ -28,6 +28,89 @@
 .node-body { flex: 1 1 auto; padding: 12px; overflow: auto; display: grid; gap: 10px; }
 .node-toggle { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .node-toggle:hover { color: var(--text); }
+
+/* Replace global focus ring (purple) for this toggle with a slim off-white outline */
+.node-toggle:focus, .node-toggle:focus-visible {
+  outline: 1px solid rgba(248,248,245,0.95) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Even stronger: target when parent is focused-within (handles keyboard+mouse) */
+.node-toggle:focus, .node-toggle:focus-visible, .node-card .node-toggle:focus, .node-card:focus-within .node-toggle {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Ensure pressed/active state is also overridden (removes purple on mousedown) */
+.node-toggle:active, .node-toggle:active:focus, .node-toggle:active:focus-visible, .node-card .node-toggle:active {
+  outline: 1px solid rgba(248,248,245,0.95) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Firefox inner focus reset */
+.node-toggle::-moz-focus-inner { border: 0; }
+
+/* make toggle positioned so pseudo-element overrides can be added if needed */
+.node-toggle { position: relative; z-index: 0; }
+
+/* Fallback overlay: draw a thin off-white ring above any existing glow
+   This covers inline box-shadows or JS-applied glows that were not overridden. */
+.node-toggle::after {
+  /* keep pseudo-element but keep it hidden to avoid interfering */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  opacity: 0 !important;
+  transition: none !important;
+  z-index: -1; /* behind the button */
+  display: none;
+}
+
+/* Aggressively remove any external purple glows applied to ancestors or pseudo-elements */
+.node-card:focus-within, .node-card:focus-within * {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Also target common pseudo-elements on the card that might carry glows */
+.node-card:focus-within::before, .node-card:focus-within::after,
+.node-card:focus-within *::before, .node-card:focus-within *::after {
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+/* Custom scrollbars for node modal and rail panel */
+.node-body, .node-form, .rail-panel {
+  scrollbar-color: rgba(60,60,60,0.7) rgba(20,20,20,0.35); /* thumb track for Firefox */
+  scrollbar-width: thin;
+}
+
+/* WebKit browsers */
+.node-body::-webkit-scrollbar, .node-form::-webkit-scrollbar, .rail-panel::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+.node-body::-webkit-scrollbar-track, .node-form::-webkit-scrollbar-track, .rail-panel::-webkit-scrollbar-track {
+  background: rgba(20,20,20,0.45); /* darker translucent track */
+  border-radius: 8px;
+}
+.node-body::-webkit-scrollbar-thumb, .node-form::-webkit-scrollbar-thumb, .rail-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(36,36,36,0.95), rgba(28,28,28,0.92));
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.45) inset, 0 1px 0 rgba(255,255,255,0.02);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+}
+.node-body::-webkit-scrollbar-thumb:hover, .node-form::-webkit-scrollbar-thumb:hover, .rail-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(46,46,46,0.98), rgba(32,32,32,0.96));
+}
 .node-form { display: grid; gap: 10px; }
 .node-form label { font-size: 12px; color: var(--muted); display: grid; gap: 6px; }
 .node-form input, .node-form textarea, .node-form select { width: 100%; box-sizing: border-box; background: var(--control-bg); color: var(--text); border: 1px solid var(--control-border); border-radius: 8px; padding: 8px 10px; }
@@ -35,3 +118,12 @@
 
 /* Resize handles */
 .react-flow__resize-control.handle { background: #1f1f1f; border: 1px solid #3a3a3a; }
+
+/* Override: reduce decorative outline thickness and switch color to off-white
+   The UI uses a glowing/padded outline for certain node controls (previously purple).
+   This rule halves the visual thickness and applies a soft off-white glow. */
+.node-outline, .control-outline, .node-card:focus-within::after {
+  /* previous visual size was ~4px; reduce to ~2px for a slimmer look */
+  box-shadow: 0 0 0 2px rgba(248,248,245,0.95);
+  outline: none;
+}
