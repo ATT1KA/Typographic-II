@@ -51,7 +51,7 @@ export default function CustomNode(props: NodeProps) {
   );
 
   return (
-    <div className={`node-card ${selected ? 'selected' : ''}`}>
+    <div className={`node-card ${selected ? 'selected' : ''} vertical-${String(data.vertical || '').toLowerCase()}`}>
       <NodeResizer isVisible={!!selected} minWidth={300} minHeight={200} lineStyle={{ stroke: '#3d4557' }} handleStyle={{ width: 8, height: 8, borderRadius: 2 }} />
 
       <div className="node-head" style={headStyle}>

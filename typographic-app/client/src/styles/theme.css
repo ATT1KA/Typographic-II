@@ -24,9 +24,9 @@
   /* Explicit control colors */
   --control-bg: var(--bg-elev-2);
   --control-border: color-mix(in oklab, var(--border), white 10%);
-  --radius: 10px;
-  --radius-sm: 8px;
-  --radius-lg: 14px;
+  --radius: 4px;
+  --radius-sm: 4px;
+  --radius-lg: 6px;
   --shadow-1: 0 6px 20px rgba(0,0,0,0.25);
   --shadow-2: 0 20px 60px rgba(0,0,0,0.35);
   --space-1: 4px;
@@ -40,7 +40,7 @@
 .app-shell {
   height: 100%;
   display: grid;
-  grid-template-rows: 56px 1fr;
+  grid-template-rows: 84px 1fr; /* header 50% taller */
   /* Keep accents subtle; all other tones monochrome */
   background: radial-gradient(1200px 600px at 80% -10%, rgba(108,92,231,0.06), transparent 50%),
               radial-gradient(800px 400px at -10% 110%, rgba(0,184,148,0.05), transparent 50%),
@@ -49,17 +49,31 @@
 }
 .app-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 var(--space-4);
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08)), rgba(14,18,30,0.55);
+  /* reduced by ~15% for slightly less edge spacing */
+  padding: 0 clamp(27px, 5.1vw, 61px);
+  /* Grey acrylic with subtle texture */
+  background:
+    linear-gradient(180deg, rgba(64,66,70,0.26), rgba(26,28,30,0.34)),
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
+    radial-gradient(120% 120% at 90% 100%, rgba(0,0,0,0.10), rgba(0,0,0,0) 60%),
+    rgba(28,30,34,0.65);
   border-bottom: 1px solid var(--control-border);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
-  box-shadow: 0 4px 4px rgba(0,0,0,0.18);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.22);
 }
 .app-nav { display: flex; gap: 16px; }
-.app-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 8px 10px; border-radius: 8px; }
-.app-nav a:hover, .app-nav a.active { color: var(--text); background: rgba(255,255,255,0.03); }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+.app-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 8px 10px; border-radius: var(--radius); }
+.app-nav a:hover, .app-nav a.active {
+  color: var(--text);
+  /* Darker highlight instead of lighter */
+  background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.24));
+  /* subtle 1px inner bevel: light top edge, darker bottom edge */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.32);
+  transition: background 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-title { font-family: var(--font-mono); font-weight: 600; font-size: 18px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--text); text-shadow: 0 0 2px rgba(0,0,0,0.9); }
 .header-actions { display: flex; align-items: center; gap: var(--space-3); }
 .icon-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--control-bg); border: 1px solid var(--control-border); color: var(--text); }
 .icon-btn:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
@@ -79,16 +93,16 @@
 .rail-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 12; }
 .rail.open .rail-backdrop { opacity: 1; pointer-events: auto; }
 .rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); z-index: 15; }
-.rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: 3px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
+.rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
 .rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail.open .rail-panel { transform: translateX(0); }
 /* Ensure no peek when closed */
 .rail:not(.open) .rail-panel { visibility: hidden; }
-.rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--control-border); background: rgba(20,20,20,0.65); color: var(--text); }
+.rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--control-border); background: rgba(20,20,20,0.65); color: var(--text); }
 .rail-section summary::-webkit-details-marker { display: none; }
 .rail-list { display: grid; gap: 8px; margin-top: 8px; }
-.rail-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--control-border); background: rgba(18,18,18,0.78); color: var(--text); backdrop-filter: blur(2px) saturate(120%); }
+.rail-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--control-border); background: rgba(18,18,18,0.78); color: var(--text); backdrop-filter: blur(2px) saturate(120%); }
 .rail-item:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
 /* Add a bit of space before each new category bar */
 .rail-panel details + details summary { margin-top: var(--space-2); }
@@ -101,7 +115,7 @@
   color: var(--text) !important;
   border: 1px solid var(--control-border) !important;
   box-shadow: 0 4px 4px rgba(0,0,0,0.18) !important;
-  border-radius: 3px !important;
+  border-radius: var(--radius) !important;
 }
 
 /* Make the toast smaller and thinner */
@@ -131,8 +145,32 @@
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid var(--control-border);
-  border-radius: 3px;
+  border-radius: var(--radius);
   box-shadow: 0 4px 4px rgba(0,0,0,0.18);
+}
+
+/* Workflow top-right controls (Workflow ID, Save, Load) */
+.workflow-controls {
+  display: flex; align-items: center; gap: 8px;
+}
+.workflow-controls input,
+.workflow-controls button {
+  border-radius: 4px !important;
+}
+.workflow-controls input {
+  padding: 8px 12px;
+  height: 40px;
+  width: 120px;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
+  color: var(--text);
+}
+.workflow-controls button {
+  padding: 10px 16px;
+  height: 40px;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
+  color: var(--text);
 }
 
 /* Controls positioned left of minimap */

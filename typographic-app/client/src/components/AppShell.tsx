@@ -10,7 +10,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <header className="app-header">
         <div className="brand">
           <SquareGanttChart size={18} color="var(--accent)" />
-          <span>Typographic Workflow</span>
+          <span className="brand-title">TYPOGRAPHIC</span>
         </div>
         <nav className="app-nav">
           <NavLink to="/explorer" className={({ isActive }) => isActive ? 'active' : ''}>Explorer</NavLink>

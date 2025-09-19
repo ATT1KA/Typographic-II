@@ -1,9 +1,30 @@
-.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: var(--radius); background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .node-card.selected { border-color: color-mix(in oklab, var(--control-border), white 25%); }
-.node-head { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid var(--control-border); display: grid; gap: 6px; border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); color: var(--text); }
+.node-head { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid var(--control-border); display: grid; gap: 6px; border-top-left-radius: 10px; border-top-right-radius: 10px; color: var(--text); }
 .node-title { font-weight: 700; line-height: 1; }
 .node-sub { font-size: 12px; opacity: 0.8; }
 .node-head .node-title, .node-head .node-sub { text-shadow: 0 0 2px rgba(0,0,0,0.9); }
+/* Outline header text for SCI vertical with yellow header background */
+.vertical-sci .node-head .node-title,
+.vertical-sci .node-head .node-sub {
+  /* Keep the same outer glow as other headers */
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+
+  /* Thicker, smooth outline */
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.32);
+  paint-order: stroke fill; /* render stroke under fill for cleaner edges */
+}
+
+/* Firefox fallback */
+@supports not (-webkit-text-stroke: 1px black) {
+  .vertical-sci .node-head .node-title,
+  .vertical-sci .node-head .node-sub {
+    /* Outer glow + soft inner halo to mimic stroke */
+    text-shadow:
+      0 0 2px rgba(0, 0, 0, 0.9),
+      0 0 1.5px rgba(0, 0, 0, 0.30);
+  }
+}
 .node-body { flex: 1 1 auto; padding: 12px; overflow: auto; display: grid; gap: 10px; }
 .node-toggle { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .node-toggle:hover { color: var(--text); }

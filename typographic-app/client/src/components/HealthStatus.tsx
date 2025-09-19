@@ -10,7 +10,7 @@ export default function HealthStatus() {
     let cancel = false;
     const ping = async () => {
       try {
-        const apiRes = await fetch('/api-server/health');
+  const apiRes = await fetch('/api/health');
         const apiOk = apiRes.ok;
         const flowRes = await fetch('/api/flow/default');
         const flowOk = flowRes.ok;
@@ -45,7 +45,7 @@ export default function HealthStatus() {
   );
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontFamily: 'var(--font-mono)' }}>
       <span title="API server health"><Dot ok={api.ok} />API</span>
       <span title="Flow server health"><Dot ok={flow.ok} />Flow</span>
     </div>

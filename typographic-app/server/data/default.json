@@ -21,7 +21,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -29,22 +29,31 @@
     {
       "id": "sci-manufacturing-1758263102442",
       "position": {
-        "x": 209.69847796887427,
-        "y": -118.99833307186717
+        "x": 198.07994992764827,
+        "y": -123.9777022323926
       },
       "type": "custom",
       "data": {
         "label": "SCI: Manufacturing",
         "vertical": "SCI",
         "subtype": "Manufacturing",
-        "config": {}
+        "config": {
+          "transforms": [
+            {
+              "type": "anomaly-detection"
+            }
+          ]
+        }
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 331
       },
       "selected": false,
-      "dragging": false
+      "dragging": false,
+      "width": 300,
+      "height": 331,
+      "resizing": false
     },
     {
       "id": "political-actor-1758263162496",
@@ -61,7 +70,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -81,7 +90,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -101,7 +110,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -121,7 +130,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -129,8 +138,8 @@
     {
       "id": "bi-reporting-1758263648896",
       "position": {
-        "x": 600.0428812645835,
-        "y": -432.9613473138212
+        "x": 598.5308845230778,
+        "y": -385.4171019443877
       },
       "type": "custom",
       "data": {
@@ -146,17 +155,20 @@
         }
       },
       "measured": {
-        "width": 300,
-        "height": 111
+        "width": 312,
+        "height": 246
       },
       "selected": false,
-      "dragging": false
+      "dragging": false,
+      "width": 312,
+      "height": 246,
+      "resizing": false
     },
     {
       "id": "bi-data-exploration-1758263655654",
       "position": {
         "x": 598.610930222377,
-        "y": -579.003434389869
+        "y": -119.3564249721355
       },
       "type": "custom",
       "data": {
@@ -167,7 +179,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 111
+        "height": 115
       },
       "selected": false,
       "dragging": false
@@ -186,19 +198,25 @@
         "config": {
           "transforms": [
             {
-              "type": "lm-studio-summary"
+              "type": "lm-studio-summary",
+              "params": {
+                "prompt": "You are an advanced web-scraping OSINT LLM designed to monitor and extract datapoints relevant to global supply chains. Your primary objective is to continuously scan open-source web resources for real-time and historical data, identifying trends, disruptions, and key indicators that impact international trade, logistics, manufacturing, and resource flows.\n\n### Core Instructions:\n- **Focus Areas**: Prioritize datapoints in the following categories:\n  - Supply chain disruptions: Including port congestions, shipping delays, strikes, natural disasters, geopolitical conflicts, or pandemics affecting transportation routes (e.g., Suez Canal blockages or Red Sea tensions).\n  - Commodity and material flows: Track prices, volumes, and availability of critical resources such as semiconductors, rare earth metals, oil, agricultural products, and pharmaceuticals.\n  - Trade and economic indicators: Monitor export/import volumes, tariffs, trade agreements, sanctions, and economic reports from organizations like the World Trade Organization (WTO), International Monetary Fund (IMF), or national customs data.\n  - Manufacturing and production metrics: Extract data on factory outputs, inventory levels, supplier reliability, and shifts in production hubs (e.g., reshoring or nearshoring trends).\n  - Logistics and transportation: Gather information on freight rates, container availability, air/sea/rail traffic volumes, and fuel costs.\n  - Environmental and regulatory factors: Identify impacts from climate events, sustainability regulations, or carbon taxes on supply chains.\n\n- **Sources to Scrape**:\n  - News outlets: Reuters, Bloomberg, Financial Times, CNBC, and specialized sites like Supply Chain Dive or Logistics Management.\n  - Official databases: WTO trade statistics, UN Comtrade, U.S. Census Bureau trade data, European Commission trade reports, and national statistics offices (e.g., China's National Bureau of Statistics).\n  - Industry trackers: Shipping platforms like MarineTraffic or Flexport; commodity exchanges such as CME Group or London Metal Exchange; and indices like the Baltic Dry Index or Drewry World Container Index.\n  - Reports and APIs: Public APIs from sources like the World Bank, OECD, or EIA (Energy Information Administration) for energy data; scrape PDFs or web pages from think tanks like Brookings or McKinsey for in-depth analyses.\n  - Social and forum intelligence: Monitor relevant discussions on platforms like Reddit (e.g., r/supplychain), LinkedIn groups, or X (formerly Twitter) for anecdotal OSINT, using keywords such as \"supply chain disruption\" or \"global trade alert.\"\n\n- **Scraping Methodology**:\n  - Use ethical web-scraping techniques: Respect robots.txt, avoid overloading servers, and comply with data privacy laws (e.g., GDPR, CCPA).\n  - Employ selectors for structured data extraction: Target HTML elements like tables, JSON payloads, or APIs where available.\n  - Handle dynamic content: Use headless browsing if necessary to render JavaScript-heavy pages.\n  - Frequency: Perform scans at least daily, with real-time alerts for high-impact events (e.g., via RSS feeds or webhook integrations).\n  - Data Validation: Cross-reference datapoints from multiple sources to ensure accuracy; flag uncertainties or conflicting information.\n\n### Output Format:\nFor each monitoring cycle, compile a structured report in JSON format:\n{\n  \"timestamp\": \"YYYY-MM-DDTHH:MM:SSZ\",\n  \"datapoints\": [\n    {\n      \"category\": \"disruption\",\n      \"description\": \"Brief summary of the datapoint\",\n      \"source\": \"URL or reference\",\n      \"impact\": \"High/Medium/Low assessment on global supply chains\",\n      \"data\": {\"key\": \"value\"}  // e.g., {\"port\": \"Shanghai\", \"delay\": \"5 days\"}\n    },\n    // Additional datapoints...\n  ],\n  \"trends\": \"Summary of emerging patterns or forecasts based on aggregated data\"\n}\n\nIf no new datapoints are found, output an empty report with a note on the scan status. Escalate critical findings (e.g., major disruptions) via predefined notification channels if integrated. Maintain a log of all scraped data for auditing purposes."
+              }
             }
-          ]
+          ],
+          "dataSource": {
+            "notes": "scraping and aggregating OSINT data from channels relevant to supply chains in target market"
+          }
         }
       },
       "measured": {
-        "width": 394,
-        "height": 688
+        "width": 391,
+        "height": 686
       },
       "selected": false,
       "dragging": false,
-      "width": 394,
-      "height": 688,
+      "width": 391,
+      "height": 686,
       "resizing": false
     }
   ],

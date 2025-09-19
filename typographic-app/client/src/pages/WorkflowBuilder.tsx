@@ -394,8 +394,8 @@ export default function WorkflowBuilder() {
       className="toast-container-flow"
     />
       <NodeLibrary open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} onAdd={addFromLibrary} />
-      <div style={{ position: 'relative', height: '100%' }}>
-      <div style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+  <div style={{ position: 'relative', height: '100%' }}>
+  <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>
           Workflow ID:
           <input
