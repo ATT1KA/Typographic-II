@@ -47,9 +47,11 @@
 .app-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 var(--space-4);
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.03)), var(--bg-elev);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.08)), rgba(14,18,30,0.55);
   border-bottom: 1px solid var(--control-border);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 4px 4px rgba(0,0,0,0.18);
 }
 .app-nav { display: flex; gap: 16px; }
 .app-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 8px 10px; border-radius: 8px; }
@@ -67,13 +69,19 @@
 
 /* Overlay rail for Workflow sidebar */
 :root { --rail-w: 48px; --panel-w: 320px; }
-.rail { position: absolute; inset: 0 auto 0 0; width: var(--panel-w); pointer-events: none; z-index: 10; }
+/* Rail is narrow by default; expands only when open */
+.rail { position: absolute; inset: 0 auto 0 0; width: var(--rail-w); pointer-events: none; z-index: 14; }
+.rail.open { width: var(--panel-w); }
 .rail-inner { height: 100%; display: grid; grid-template-columns: var(--rail-w) 1fr; pointer-events: none; }
-.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); }
+.rail-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 12; }
+.rail.open .rail-backdrop { opacity: 1; pointer-events: auto; }
+.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); z-index: 15; }
 .rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
-.rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, color-mix(in oklab, var(--bg), black 4%), color-mix(in oklab, var(--bg), black 2%)); border-right: 1px solid var(--control-border); box-shadow: 10px 0 30px rgba(0,0,0,0.35); padding: 12px; overflow: auto; transform: translateX(calc(-1 * (var(--panel-w) - var(--rail-w)))); transition: transform 200ms ease; }
+.rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail.open .rail-panel { transform: translateX(0); }
+/* Ensure no peek when closed */
+.rail:not(.open) .rail-panel { visibility: hidden; }
 .rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-section summary::-webkit-details-marker { display: none; }
 .rail-list { display: grid; gap: 8px; margin-top: 8px; }

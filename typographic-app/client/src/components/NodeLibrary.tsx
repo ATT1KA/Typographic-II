@@ -90,15 +90,13 @@ export default function NodeLibrary({
   );
 
   return (
-    <div
-      className={`rail ${open ? 'open' : ''}`}
-      style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'var(--panel-w, 320px)', pointerEvents: 'none', zIndex: 10 }}
-    >
+    <div className={`rail ${open ? 'open' : ''}`} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'var(--panel-w, 320px)', pointerEvents: 'none', zIndex: 14 }}>
+      <div className="rail-backdrop" onClick={onToggle} />
       <div className="rail-inner">
-        <div className="rail-handle">
+        <div className="rail-handle" style={{ pointerEvents: 'auto' }}>
           <button className="rail-toggle" onClick={onToggle} title={open ? 'Collapse' : 'Expand'}>{open ? '←' : '→'}</button>
         </div>
-  <div className="rail-panel" style={{ background: '#1a1a1a' }}>
+  <div className="rail-panel">
           <div style={{ fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>Node Library</div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>Browse and add nodes by category</div>
           <div style={{ height: 8 }} />
