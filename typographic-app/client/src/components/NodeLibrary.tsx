@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { verticalColors } from '../types/flow';
 
 export type VerticalKey = 'BI' | 'Political' | 'Policymaking' | 'Fundraising' | 'OSINT' | 'SCI';
 
@@ -67,22 +68,33 @@ export default function NodeLibrary({
     ],
   };
 
-  const Section = ({ title, items }: { title: string; items: LibraryItem[] }) => (
+  // removed withAlpha helper as category bars are now full opacity
+
+  const Section = ({ title, items }: { title: VerticalKey; items: LibraryItem[] }) => (
     <details open>
-      <summary style={{ padding: '8px 10px', cursor: 'pointer', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elev-2)', color: 'var(--muted)' }}>
+      <summary
+        style={{
+          padding: '8px 10px',
+          cursor: 'pointer',
+          borderRadius: 3,
+          border: '1px solid var(--control-border)',
+          background: verticalColors[title],
+          color: 'var(--text)'
+        }}
+      >
         {title}
       </summary>
       <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
         {items.map((item) => (
           <button
             key={`${item.vertical}-${item.subtype}`}
-            className="icon-btn"
+            className="rail-item"
             style={{ justifyContent: 'space-between' }}
             onClick={() => onAdd(item)}
             title={`Add ${item.vertical}: ${item.subtype}`}
           >
             <span>{item.label}</span>
-            <span style={{ fontSize: 11, opacity: 0.7 }}>{item.vertical}</span>
+            <span style={{ fontSize: 11, opacity: 0.75 }}>{item.vertical}</span>
           </button>
         ))}
       </div>
@@ -102,7 +114,7 @@ export default function NodeLibrary({
           <div style={{ height: 8 }} />
           {Object.entries(lib).map(([k, items]) => (
             <Fragment key={k}>
-              <Section title={k} items={items as LibraryItem[]} />
+              <Section title={k as VerticalKey} items={items as LibraryItem[]} />
             </Fragment>
           ))}
         </div>

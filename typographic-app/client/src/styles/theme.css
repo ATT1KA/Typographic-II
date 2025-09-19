@@ -1,5 +1,8 @@
 :root {
   color-scheme: dark;
+  /* Typography */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   /* Brighter neutral body (monochrome) */
   --bg: #1b1b1b;
   /* Elevated surfaces (monochrome) */
@@ -76,14 +79,160 @@
 .rail-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 12; }
 .rail.open .rail-backdrop { opacity: 1; pointer-events: auto; }
 .rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); z-index: 15; }
-.rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
+.rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: 3px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
 .rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail.open .rail-panel { transform: translateX(0); }
 /* Ensure no peek when closed */
 .rail:not(.open) .rail-panel { visibility: hidden; }
-.rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
+.rail-section summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--control-border); background: rgba(20,20,20,0.65); color: var(--text); }
 .rail-section summary::-webkit-details-marker { display: none; }
 .rail-list { display: grid; gap: 8px; margin-top: 8px; }
-.rail-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--text); }
+.rail-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--control-border); background: rgba(18,18,18,0.78); color: var(--text); backdrop-filter: blur(2px) saturate(120%); }
 .rail-item:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
+/* Add a bit of space before each new category bar */
+.rail-panel details + details summary { margin-top: var(--space-2); }
+
+/* Acrylic toast styling to match modal */
+.toast-acrylic {
+  background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)) !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  color: var(--text) !important;
+  border: 1px solid var(--control-border) !important;
+  box-shadow: 0 4px 4px rgba(0,0,0,0.18) !important;
+  border-radius: 3px !important;
+}
+
+/* Make the toast smaller and thinner */
+.toast-compact {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  min-height: unset !important;
+}
+
+/* Position container slightly above React Flow minimap (bottom-right) */
+.toast-container-flow {
+  bottom: 128px !important; /* default minimap approx height (120) + 8px gap */
+  right: 16px !important;
+  width: 200px !important; /* match default minimap width */
+}
+.toast-container-flow .Toastify__toast-container { width: 100% !important; }
+.toast-container-flow .Toastify__toast { width: 100% !important; margin: 0 !important; }
+.toast-container-flow .Toastify__toast-body { margin: 0 !important; padding: 0 !important; }
+
+/* Acrylic, textured MiniMap background */
+.react-flow__minimap {
+  background: 
+    linear-gradient(180deg, rgba(34,36,40,0.42), rgba(28,30,34,0.40)),
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.04), rgba(255,255,255,0) 55%),
+    radial-gradient(120% 120% at 90% 100%, rgba(0,0,0,0.06), rgba(0,0,0,0) 60%),
+    rgba(36,36,36,0.40) !important;
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--control-border);
+  border-radius: 3px;
+  box-shadow: 0 4px 4px rgba(0,0,0,0.18);
+}
+
+/* Controls positioned left of minimap */
+.reactflow-controls-left-of-minimap {
+  --gap: 1px; /* desired gap between controls and minimap (reduced by half again) */
+  position: fixed; /* JS will compute exact left/top to sit left of minimap */
+  right: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the inner Controls container doesn't apply its own absolute offsets */
+.reactflow-controls-left-of-minimap .react-flow__controls {
+  position: static !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Style React Flow Controls buttons (support both class variants and direct button) */
+.reactflow-controls-left-of-minimap .react-flow__controls__button,
+.reactflow-controls-left-of-minimap .react-flow__controls-button,
+.reactflow-controls-left-of-minimap .react-flow__controls > button {
+  /* Mid grey for usable contrast with black icons */
+  background: #6b6b6b !important; /* readable mid grey */
+  background-image: none !important;
+  color: #000 !important;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  opacity: 0.98;
+  outline: none !important;
+  filter: none !important;
+}
+
+/* Remove/reactive default focus ring and use subtle neutral focus */
+.reactflow-controls-left-of-minimap .react-flow__controls__button:hover,
+.reactflow-controls-left-of-minimap .react-flow__controls__button:active,
+.reactflow-controls-left-of-minimap .react-flow__controls__button:focus,
+.reactflow-controls-left-of-minimap .react-flow__controls__button:focus-visible,
+.reactflow-controls-left-of-minimap .react-flow__controls__button.react-flow__controls__button--active,
+.reactflow-controls-left-of-minimap .react-flow__controls-button:hover,
+.reactflow-controls-left-of-minimap .react-flow__controls-button:active,
+.reactflow-controls-left-of-minimap .react-flow__controls-button:focus,
+.reactflow-controls-left-of-minimap .react-flow__controls-button:focus-visible,
+.reactflow-controls-left-of-minimap .react-flow__controls > button:hover,
+.reactflow-controls-left-of-minimap .react-flow__controls > button:active,
+.reactflow-controls-left-of-minimap .react-flow__controls > button:focus,
+.reactflow-controls-left-of-minimap .react-flow__controls > button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255,255,255,0.06) !important;
+  background: #7a7a7a !important; /* slightly lighter on hover */
+}
+.reactflow-controls-left-of-minimap .react-flow__controls__button:focus-visible,
+.reactflow-controls-left-of-minimap .react-flow__controls__button.react-flow__controls__button--active {
+  border-color: rgba(0,0,0,0.12) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) !important;
+}
+
+.reactflow-controls-left-of-minimap .react-flow__controls__button svg,
+.reactflow-controls-left-of-minimap .react-flow__controls__button svg *,
+.reactflow-controls-left-of-minimap .react-flow__controls__button path,
+.reactflow-controls-left-of-minimap .react-flow__controls__button line,
+.reactflow-controls-left-of-minimap .react-flow__controls__button rect,
+.reactflow-controls-left-of-minimap .react-flow__controls__button circle,
+.reactflow-controls-left-of-minimap .react-flow__controls-button svg,
+.reactflow-controls-left-of-minimap .react-flow__controls-button svg *,
+.reactflow-controls-left-of-minimap .react-flow__controls-button path,
+.reactflow-controls-left-of-minimap .react-flow__controls-button line,
+.reactflow-controls-left-of-minimap .react-flow__controls-button rect,
+.reactflow-controls-left-of-minimap .react-flow__controls-button circle,
+.reactflow-controls-left-of-minimap .react-flow__controls > button svg,
+.reactflow-controls-left-of-minimap .react-flow__controls > button svg *,
+.reactflow-controls-left-of-minimap .react-flow__controls > button path,
+.reactflow-controls-left-of-minimap .react-flow__controls > button line,
+.reactflow-controls-left-of-minimap .react-flow__controls > button rect,
+.reactflow-controls-left-of-minimap .react-flow__controls > button circle {
+  fill: #000 !important;
+  stroke: #000 !important;
+  color: #000 !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 900px) {
+  .reactflow-controls-left-of-minimap { right: calc(var(--minimap-w) + var(--gap) + 12px); bottom: 12px; }
+  .react-flow__minimap { transform: scale(0.98); }
+}

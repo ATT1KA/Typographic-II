@@ -16,7 +16,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
 import NodeLibrary, { type LibraryItem } from '../components/NodeLibrary';
-import { type NodeData } from '../types/flow';
+import { type NodeData, verticalColors } from '../types/flow';
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -126,6 +126,36 @@ function WorkflowCanvas({
     return () => clearTimeout(t);
   }, [sidebarOpen, rf]);
 
+  // position the controls wrapper to the left of the minimap with an 8px gap
+  useEffect(() => {
+  const gap = 1;
+    const wrapper = document.querySelector('.reactflow-controls-left-of-minimap') as HTMLElement | null;
+    const minimap = document.querySelector('.react-flow__minimap') as HTMLElement | null;
+    function position() {
+      if (!wrapper || !minimap) return;
+      const mmRect = minimap.getBoundingClientRect();
+      // position wrapper left of minimap, vertically centered
+      const left = Math.max(8, mmRect.left - gap - wrapper.offsetWidth);
+      const desiredTop = mmRect.top + (mmRect.height / 2) - (wrapper.offsetHeight / 2);
+      const minTop = mmRect.top;
+      const maxTop = mmRect.bottom - wrapper.offsetHeight;
+      const clampedTop = Math.max(minTop, Math.min(desiredTop, maxTop));
+      wrapper.style.left = `${left}px`;
+      wrapper.style.top = `${clampedTop}px`;
+    }
+    position();
+    const ro = new ResizeObserver(position);
+    try { if (minimap) ro.observe(minimap); } catch {}
+    window.addEventListener('resize', position);
+    // also reposition on scroll so the wrapper stays vertically centered relative to viewport minimap
+    window.addEventListener('scroll', position, { passive: true });
+    return () => {
+      window.removeEventListener('resize', position);
+      window.removeEventListener('scroll', position);
+      try { ro.disconnect(); } catch {}
+    };
+  }, [sidebarOpen]);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -138,8 +168,19 @@ function WorkflowCanvas({
       connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2 }}
       fitView
     >
-  <MiniMap nodeColor={() => '#5a5a5a'} nodeStrokeColor="#0a0a0a" maskColor="rgba(0,0,0,0.55)" pannable zoomable />
-      <Controls position="bottom-right" />
+      <MiniMap
+        nodeColor={(n) => {
+          const v = (n as any)?.data?.vertical as keyof typeof verticalColors | undefined;
+          return (v && verticalColors[v]) || '#5a5a5a';
+        }}
+        nodeStrokeColor="#0a0a0a"
+        maskColor="rgba(0,0,0,0.55)"
+        pannable
+        zoomable
+      />
+      <div className="reactflow-controls-left-of-minimap">
+        <Controls />
+      </div>
   <Background gap={24} size={1} color="#202020" />
     </ReactFlow>
   );
@@ -208,7 +249,7 @@ export default function WorkflowBuilder() {
     return { ...n, data: d };
   }), []);
 
-  const saveFlow = useCallback(async () => {
+  const saveFlow = useCallback(async (opts?: { silent?: boolean }) => {
     setSaving(true);
     try {
       const res = await fetch(apiUrl, {
@@ -220,7 +261,9 @@ export default function WorkflowBuilder() {
         const err = await res.json();
         throw new Error(err.error || 'Save failed');
       }
-      toast.success('Flow saved!');
+      if (!opts?.silent) {
+        toast.success('Saved', { icon: false });
+      }
     } catch (e) {
       toast.error(`Save failed: ${String(e)}`);
     } finally {
@@ -236,9 +279,8 @@ export default function WorkflowBuilder() {
         throw new Error(err.error || 'Load failed');
       }
       const data = await res.json();
-      setNodes(attachCallbacks(data.nodes || []));
-      setEdges(data.edges || []);
-      toast.success('Flow loaded!');
+  setNodes(attachCallbacks(data.nodes || []));
+  setEdges(data.edges || []);
     } catch (e) {
       toast.error(`Load failed: ${String(e)}`);
     }
@@ -248,10 +290,10 @@ export default function WorkflowBuilder() {
     setEdges((eds) => addEdge({ ...connection, animated: true }, eds));
   }, [setEdges]);
 
-  // autosave a short time after nodes/edges change, only after initial load
+  // autosave a short time after nodes/edges change, only after initial load (silent)
   useEffect(() => {
     if (!initialLoadedRef.current) return;
-    const t = setTimeout(() => { void saveFlow(); }, 800);
+    const t = setTimeout(() => { void saveFlow({ silent: true }); }, 800);
     return () => clearTimeout(t);
   }, [nodes, edges, saveFlow]);
 
@@ -343,7 +385,14 @@ export default function WorkflowBuilder() {
 
   return (
   <div style={{ height: '100%', minHeight: 500, position: 'relative', background: '#000' }}>
-      <ToastContainer position="top-right" autoClose={3000} />
+    <ToastContainer
+      position="bottom-right"
+      autoClose={1600}
+      hideProgressBar
+      closeButton={false}
+      toastClassName="toast-acrylic toast-compact"
+      className="toast-container-flow"
+    />
       <NodeLibrary open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} onAdd={addFromLibrary} />
       <div style={{ position: 'relative', height: '100%' }}>
       <div style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -355,7 +404,7 @@ export default function WorkflowBuilder() {
             style={{ marginLeft: 4, width: 100 }}
           />
         </label>
-        <button onClick={() => void saveFlow()} disabled={saving} title="Save to disk">{saving ? 'Saving…' : 'Save'}</button>
+  <button onClick={() => void saveFlow()} disabled={saving} title="Save to disk">{saving ? 'Saving…' : 'Save'}</button>
         <button onClick={() => void loadFlow()} title="Load from disk">Load</button>
       </div>
       {nodes.some((n) => n.selected) && (

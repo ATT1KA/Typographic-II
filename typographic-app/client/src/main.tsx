@@ -3,8 +3,8 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppShell from './components/AppShell';
-import './styles/global.css';
 import './styles/theme.css';
+import './styles/global.css';
 
 const Explorer = lazy(() => import('./pages/Explorer'));
 const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'));
