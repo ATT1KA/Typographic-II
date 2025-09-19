@@ -1,6 +1,7 @@
-import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { useState } from 'react';
+import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
+import { useMemo, useState } from 'react';
 import { type NodeData, verticalColors } from '../types/flow';
+import '../styles/nodes.css';
 
 const validateUrl = (url: string) => /^https?:\/\/.+/.test(url);
 
@@ -44,19 +45,26 @@ export default function CustomNode(props: NodeProps) {
     else if (key === 'outputs') updateConfig('outputs', value.split('\n').filter(Boolean));
   };
 
+  const headStyle = useMemo(
+    () => ({ background: verticalColors[data.vertical as keyof typeof verticalColors], color: 'var(--text)' }),
+    [data.vertical]
+  );
+
   return (
-    <div style={{ minWidth: 280, border: selected ? '2px solid #333' : '1px solid #aaa', borderRadius: 8, background: '#fff' }}>
-  <div style={{ padding: '8px 10px', borderTopLeftRadius: 8, borderTopRightRadius: 8, background: verticalColors[data.vertical], color: data.vertical === 'SCI' ? '#000' : '#fff' }}>
-        <div style={{ fontWeight: 700 }}>{data.label}</div>
-        <div style={{ fontSize: 12, opacity: 0.9 }}>{data.vertical} • {data.subtype}</div>
+    <div className={`node-card ${selected ? 'selected' : ''}`}>
+      <NodeResizer isVisible={!!selected} minWidth={300} minHeight={200} lineStyle={{ stroke: '#3d4557' }} handleStyle={{ width: 8, height: 8, borderRadius: 2 }} />
+
+      <div className="node-head" style={headStyle}>
+        <div className="node-title">{data.label}</div>
+        <div className="node-sub">{data.vertical} • {data.subtype}</div>
       </div>
 
-      <div style={{ padding: 10 }}>
-        <button onClick={() => setOpen((v) => !v)} style={{ fontSize: 12 }}>
+      <div className="node-body" onKeyDownCapture={(e) => e.stopPropagation()}>
+        <button className="node-toggle" onClick={() => setOpen((v) => !v)}>
           {open ? 'Hide config' : 'Edit config'}
         </button>
         {open && (
-          <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
+          <div className="node-form">
             <label style={{ fontSize: 12 }}>
               Data Source Type
               <select value={ds.type || 'api'} onChange={(e) => updateConfig('dataSource', { ...ds, type: e.target.value })}>
@@ -68,7 +76,6 @@ export default function CustomNode(props: NodeProps) {
             <label style={{ fontSize: 12 }}>
               Endpoint {errors.endpoint && <span style={{ color: 'red' }}>{errors.endpoint}</span>}
               <input
-                style={{ width: '100%' }}
                 type="text"
                 value={ds.endpoint || ''}
                 placeholder="https://api.example.com/endpoint"
@@ -78,7 +85,6 @@ export default function CustomNode(props: NodeProps) {
             <label style={{ fontSize: 12 }}>
               Notes
               <textarea
-                style={{ width: '100%', minHeight: 40 }}
                 value={ds.notes || ''}
                 onChange={(e) => validateAndUpdate('notes', e.target.value)}
               />
@@ -86,7 +92,7 @@ export default function CustomNode(props: NodeProps) {
             <div>
               <label style={{ fontSize: 12 }}>Transforms</label>
               {transforms.map((t: any, idx: number) => (
-                <div key={idx} style={{ marginBottom: 8, padding: 4, border: '1px solid #ccc' }}>
+                <div key={idx} style={{ marginBottom: 8, padding: 8, border: '1px solid var(--control-border)', borderRadius: 8, background: 'var(--control-bg)' }}>
                   <select value={t.type} onChange={(e) => updateTransform(idx, { type: e.target.value })}>
                     <option value="aggregation">Aggregation</option>
                     <option value="anomaly-detection">Anomaly Detection</option>
@@ -95,13 +101,11 @@ export default function CustomNode(props: NodeProps) {
                   {t.type === 'lm-studio-summary' && (
                     <>
                       <input
-                        style={{ width: '100%', marginTop: 4 }}
                         placeholder="LM Endpoint"
                         value={t.params?.endpoint || ''}
                         onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } })}
                       />
                       <textarea
-                        style={{ width: '100%', minHeight: 40, marginTop: 4 }}
                         placeholder="Prompt"
                         value={t.params?.prompt || ''}
                         onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } })}
@@ -116,7 +120,6 @@ export default function CustomNode(props: NodeProps) {
             <label style={{ fontSize: 12 }}>
               Outputs (one per line)
               <textarea
-                style={{ width: '100%', minHeight: 60 }}
                 value={outputs.join('\n')}
                 placeholder="dashboard: /dash/markets\nalerts: slack://#markets"
                 onChange={(e) => validateAndUpdate('outputs', e.target.value)}

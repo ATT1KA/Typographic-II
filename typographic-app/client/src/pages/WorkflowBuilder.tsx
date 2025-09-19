@@ -1,5 +1,5 @@
-import { ReactFlow } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   Controls,
@@ -15,7 +15,8 @@ import '@xyflow/react/dist/style.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
-import { type NodeData, verticalColors } from '../types/flow';
+import NodeLibrary, { type LibraryItem } from '../components/NodeLibrary';
+import { type NodeData } from '../types/flow';
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -96,11 +97,64 @@ const seedEdges: Edge[] = [
   { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true }
 ];
 
+function WorkflowCanvas({
+  nodes,
+  edges,
+  nodeTypes,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  defaultEdgeOptions,
+  sidebarOpen,
+}: {
+  nodes: Node<NodeData>[];
+  edges: Edge[];
+  nodeTypes: any;
+  onNodesChange: any;
+  onEdgesChange: any;
+  onConnect: any;
+  defaultEdgeOptions: any;
+  sidebarOpen: boolean;
+}) {
+  const rf = useReactFlow();
+
+  // fit view on sidebar toggle
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { rf.fitView({ padding: 0.2 }); } catch {}
+    }, 50);
+    return () => clearTimeout(t);
+  }, [sidebarOpen, rf]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      defaultEdgeOptions={defaultEdgeOptions}
+      connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2 }}
+      fitView
+    >
+  <MiniMap nodeColor={() => '#5a5a5a'} nodeStrokeColor="#0a0a0a" maskColor="rgba(0,0,0,0.55)" pannable zoomable />
+      <Controls position="bottom-right" />
+  <Background gap={24} size={1} color="#202020" />
+    </ReactFlow>
+  );
+}
+
 export default function WorkflowBuilder() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(seedEdges);
   const [saving, setSaving] = useState(false);
   const [workflowId, setWorkflowId] = useState('default');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    const v = localStorage.getItem('wfSidebarOpen');
+    return v === null ? true : v === 'true';
+  });
+  const initialLoadedRef = useRef(false);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
   const apiUrl = `${API_BASE}/flow/${workflowId}`;
@@ -118,7 +172,7 @@ export default function WorkflowBuilder() {
     }));
   }, [setNodes]);
 
-  // initial load
+  // initial load with seed fallback
   useEffect(() => {
     (async () => {
       try {
@@ -128,12 +182,22 @@ export default function WorkflowBuilder() {
           if (Array.isArray(data.nodes) && data.nodes.length) {
             setNodes(attachCallbacks(data.nodes));
             setEdges(Array.isArray(data.edges) ? data.edges : []);
+            initialLoadedRef.current = true;
             return;
           }
         }
       } catch {}
-      setNodes(attachCallbacks(seedNodes));
+      // seed and persist once if empty
+      const seededNodes = attachCallbacks(seedNodes);
+      setNodes(seededNodes);
       setEdges(seedEdges);
+      try {
+        await fetch(apiUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nodes: seededNodes.map((n) => ({ ...n, data: { ...(n.data as any), onChange: undefined } })), edges: seedEdges })
+        });
+      } catch {}
+      initialLoadedRef.current = true;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowId, attachCallbacks, setNodes, setEdges]);
@@ -184,15 +248,104 @@ export default function WorkflowBuilder() {
     setEdges((eds) => addEdge({ ...connection, animated: true }, eds));
   }, [setEdges]);
 
-  // autosave a short time after nodes/edges change
+  // autosave a short time after nodes/edges change, only after initial load
   useEffect(() => {
+    if (!initialLoadedRef.current) return;
     const t = setTimeout(() => { void saveFlow(); }, 800);
     return () => clearTimeout(t);
   }, [nodes, edges, saveFlow]);
 
+  // persist sidebar state
+  useEffect(() => {
+    localStorage.setItem('wfSidebarOpen', String(sidebarOpen));
+  }, [sidebarOpen]);
+
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'smoothstep' as const,
+    animated: true,
+    style: { stroke: '#9a9a9a', strokeWidth: 2 },
+    markerEnd: { type: 'arrowclosed' as const, color: '#9a9a9a' }
+  }), []);
+
+  const addFromLibrary = useCallback((item: LibraryItem) => {
+    const idBase = `${item.vertical.toLowerCase()}-${item.subtype.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}`;
+    const id = `${idBase}-${Date.now()}`;
+    const newNode: Node<NodeData> = {
+      id,
+      position: { x: 120 + Math.round(Math.random() * 80), y: 120 + Math.round(Math.random() * 80) },
+      type: 'custom',
+      data: {
+        label: `${item.vertical}: ${item.subtype}`,
+        vertical: item.vertical as NodeData['vertical'],
+        subtype: item.subtype,
+        config: {}
+      }
+    };
+    setNodes((curr) => curr.concat(attachCallbacks([newNode])));
+  }, [setNodes, attachCallbacks]);
+
+  const duplicateSelected = useCallback(() => {
+    const selected = nodes.filter((n) => n.selected);
+    if (!selected.length) return;
+    const idMap = new Map<string, string>();
+    const clones: Node<NodeData>[] = selected.map((n) => {
+      const newId = `${n.id}-copy-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      idMap.set(n.id, newId);
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 30, y: n.position.y + 30 },
+        selected: false,
+      } as Node<NodeData>;
+    });
+    const newEdges: Edge[] = edges
+      .filter((e) => selected.some((n) => n.id === e.source) && selected.some((n) => n.id === e.target))
+      .map((e) => ({
+        ...e,
+        id: `${e.id}-copy-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        source: idMap.get(e.source) || e.source,
+        target: idMap.get(e.target) || e.target,
+        selected: false,
+      }));
+    setNodes((curr) => curr.concat(attachCallbacks(clones)));
+    setEdges((curr) => curr.concat(newEdges));
+  }, [nodes, edges, attachCallbacks, setNodes, setEdges]);
+
+  const deleteSelected = useCallback(() => {
+    const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id));
+    if (!selectedIds.size) return;
+    setNodes((curr) => curr.filter((n) => !selectedIds.has(n.id)));
+    setEdges((curr) => curr.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
+  }, [nodes, setNodes, setEdges]);
+
+  // keyboard shortcuts
+  useEffect(() => {
+    const isEditing = (el: Element | null) => {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      const tag = el.tagName.toLowerCase();
+      return el.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select';
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (isEditing(document.activeElement)) return; // ignore shortcuts while typing
+      const isDup = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'd');
+      const isDel = e.key === 'Delete' || e.key === 'Backspace';
+      if (isDup) {
+        e.preventDefault();
+        duplicateSelected();
+      } else if (isDel) {
+        e.preventDefault();
+        deleteSelected();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [duplicateSelected, deleteSelected]);
+
   return (
-    <div style={{ height: '100%', minHeight: 500, position: 'relative' }} className="card">
+  <div style={{ height: '100%', minHeight: 500, position: 'relative', background: '#000' }}>
       <ToastContainer position="top-right" autoClose={3000} />
+      <NodeLibrary open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} onAdd={addFromLibrary} />
+      <div style={{ position: 'relative', height: '100%' }}>
       <div style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>
           Workflow ID:
@@ -205,19 +358,25 @@ export default function WorkflowBuilder() {
         <button onClick={() => void saveFlow()} disabled={saving} title="Save to disk">{saving ? 'Saving…' : 'Save'}</button>
         <button onClick={() => void loadFlow()} title="Load from disk">Load</button>
       </div>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        fitView
-      >
-        <MiniMap nodeColor={(n) => verticalColors[(n.data as NodeData)?.vertical as NodeData['vertical']] || '#999'} />
-        <Controls />
-        <Background />
-      </ReactFlow>
+      {nodes.some((n) => n.selected) && (
+        <div style={{ position: 'absolute', zIndex: 5, left: 12, top: 12, display: 'flex', gap: 8 }}>
+          <button className="icon-btn" title="Duplicate (Ctrl+D)" onClick={duplicateSelected}>Duplicate</button>
+          <button className="icon-btn" title="Delete (Del/Backspace)" onClick={deleteSelected}>Delete</button>
+        </div>
+      )}
+      <ReactFlowProvider>
+        <WorkflowCanvas
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          defaultEdgeOptions={defaultEdgeOptions}
+          sidebarOpen={sidebarOpen}
+        />
+      </ReactFlowProvider>
+      </div>
     </div>
   );
 }

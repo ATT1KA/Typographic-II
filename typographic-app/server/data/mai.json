@@ -1,0 +1,104 @@
+{
+  "nodes": [
+    {
+      "id": "policy-implementation",
+      "position": {
+        "x": 80,
+        "y": 120
+      },
+      "type": "custom",
+      "data": {
+        "label": "Policy Implementation (Delays)",
+        "vertical": "Policymaking",
+        "subtype": "Implementation",
+        "config": {
+          "dataSource": {
+            "type": "api",
+            "endpoint": "https://api.example.com/policy/status",
+            "notes": "Tracks rollout milestones and blockers"
+          }
+        }
+      }
+    },
+    {
+      "id": "fundraising-screening",
+      "position": {
+        "x": 380,
+        "y": 120
+      },
+      "type": "custom",
+      "data": {
+        "label": "Fundraising Screening (Bottlenecks)",
+        "vertical": "Fundraising",
+        "subtype": "Screening",
+        "config": {
+          "dataSource": {
+            "type": "db",
+            "endpoint": "postgres://.../dealflow",
+            "notes": "Lead qualification queue depth and SLA breaches"
+          }
+        }
+      }
+    },
+    {
+      "id": "sci-shipping",
+      "position": {
+        "x": 680,
+        "y": 120
+      },
+      "type": "custom",
+      "data": {
+        "label": "Supply Chain: Delivery/Shipping (Disruptions)",
+        "vertical": "SCI",
+        "subtype": "Delivery/Shipping",
+        "config": {
+          "dataSource": {
+            "type": "api",
+            "endpoint": "https://api.vesseltracking.example.com/positions",
+            "notes": "Port congestion and ETA variance"
+          }
+        }
+      }
+    },
+    {
+      "id": "bi-market-volatility",
+      "position": {
+        "x": 980,
+        "y": 120
+      },
+      "type": "custom",
+      "data": {
+        "label": "BI: Market Volatility",
+        "vertical": "BI",
+        "subtype": "Reporting",
+        "config": {
+          "dataSource": {
+            "type": "api",
+            "endpoint": "https://api.stockfeed.example.com/ticks",
+            "notes": "Real-time price variance and VIX proxy"
+          }
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-policy-fundraising",
+      "source": "policy-implementation",
+      "target": "fundraising-screening",
+      "animated": true
+    },
+    {
+      "id": "e-fundraising-sci",
+      "source": "fundraising-screening",
+      "target": "sci-shipping",
+      "animated": true
+    },
+    {
+      "id": "e-sci-bi",
+      "source": "sci-shipping",
+      "target": "bi-market-volatility",
+      "animated": true
+    }
+  ]
+}

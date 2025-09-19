@@ -1,4 +1,4 @@
-:root{--bg:#1A1A1A;--text:#FFFFFF;--accent:#4CAF50;--muted:#9CA3AF}
+:root{--bg:#111827;--text:#e7ecf5;--accent:#6c5ce7;--muted:#b6c0d2}
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -7,7 +7,9 @@ header.header{display:flex;gap:16px;align-items:center;padding:10px 16px;border-
 .header nav a{color:var(--muted);text-decoration:none;margin-right:12px}
 .header nav a:hover{color:var(--text)}
 .main{padding:16px}
-input,button,select,textarea{background:#121212;border:1px solid #2a2a2a;color:var(--text);padding:10px;border-radius:8px}
-button.primary{background:var(--accent);border:none;color:#000;font-weight:700}
-.card{background:#121212;border:1px solid #2a2a2a;border-radius:12px;padding:12px}
+input,button,select,textarea{background:var(--control-bg);border:1px solid var(--control-border);color:var(--text);padding:10px;border-radius:8px}
+input::placeholder,textarea::placeholder{color:color-mix(in oklab, var(--muted), white 10%)}
+button.primary{background:var(--accent);border:1px solid color-mix(in oklab, var(--accent), black 35%);color:#0b0d12;font-weight:700}
+input:focus,select:focus,textarea:focus,button:focus{outline:2px solid var(--ring);outline-offset:2px}
+.card{background:var(--bg-elev);border:1px solid var(--control-border);border-radius:12px;padding:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}

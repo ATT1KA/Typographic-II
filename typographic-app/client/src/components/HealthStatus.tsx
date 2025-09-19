@@ -31,7 +31,17 @@ export default function HealthStatus() {
   }, []);
 
   const Dot = ({ ok }: { ok: boolean }) => (
-    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 999, background: ok ? '#22c55e' : '#ef4444', marginRight: 6 }} />
+    <span
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: 999,
+        background: ok ? '#22c55e' : '#ef4444',
+        boxShadow: ok ? '0 0 0 2px rgba(34,197,94,0.25)' : '0 0 0 2px rgba(239,68,68,0.25)',
+        marginRight: 6,
+      }}
+    />
   );
 
   return (

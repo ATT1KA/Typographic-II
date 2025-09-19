@@ -3,8 +3,8 @@
     {
       "id": "policy-implementation",
       "position": {
-        "x": 80,
-        "y": 120
+        "x": 119.38423684405868,
+        "y": -673.7099040123259
       },
       "type": "custom",
       "data": {
@@ -13,108 +13,346 @@
         "subtype": "Implementation",
         "config": {
           "dataSource": {
-            "type": "api",
+            "type": "db",
             "endpoint": "https://api.example.com/policy/status",
             "notes": "Tracks rollout milestones and blockers"
           }
         }
       },
       "measured": {
-        "width": 280,
-        "height": 110
-      }
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
     },
     {
-      "id": "fundraising-screening",
+      "id": "sci-manufacturing-1758263102442",
       "position": {
-        "x": 380,
-        "y": 120
+        "x": 205.63780525101856,
+        "y": -123.0590057897229
       },
       "type": "custom",
       "data": {
-        "label": "Fundraising Screening (Bottlenecks)",
-        "vertical": "Fundraising",
-        "subtype": "Screening",
-        "config": {
-          "dataSource": {
-            "type": "db",
-            "endpoint": "postgres://.../dealflow",
-            "notes": "Lead qualification queue depth and SLA breaches"
-          }
-        }
-      },
-      "measured": {
-        "width": 292,
-        "height": 110
-      }
-    },
-    {
-      "id": "sci-shipping",
-      "position": {
-        "x": 680,
-        "y": 120
-      },
-      "type": "custom",
-      "data": {
-        "label": "Supply Chain: Delivery/Shipping (Disruptions)",
+        "label": "SCI: Manufacturing",
         "vertical": "SCI",
-        "subtype": "Delivery/Shipping",
-        "config": {
-          "dataSource": {
-            "type": "api",
-            "endpoint": "https://api.vesseltracking.example.com/positions",
-            "notes": "Port congestion and ETA variance"
-          }
-        }
+        "subtype": "Manufacturing",
+        "config": {}
       },
       "measured": {
-        "width": 368,
-        "height": 110
-      }
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
     },
     {
-      "id": "bi-market-volatility",
+      "id": "political-actor-1758263162496",
       "position": {
-        "x": 980,
-        "y": 120
+        "x": -394.3109623152468,
+        "y": -741.6136650510316
       },
       "type": "custom",
       "data": {
-        "label": "BI: Market Volatility",
+        "label": "Political: Actor",
+        "vertical": "Political",
+        "subtype": "Actor",
+        "config": {}
+      },
+      "measured": {
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "political-clique-core-1758263168400",
+      "position": {
+        "x": -386.73930506437017,
+        "y": -599.9604675979797
+      },
+      "type": "custom",
+      "data": {
+        "label": "Political: Clique/Core",
+        "vertical": "Political",
+        "subtype": "Clique/Core",
+        "config": {}
+      },
+      "measured": {
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "sci-sourcing-1758263211666",
+      "position": {
+        "x": 144.52989711433997,
+        "y": -270.2093879455148
+      },
+      "type": "custom",
+      "data": {
+        "label": "SCI: Sourcing",
+        "vertical": "SCI",
+        "subtype": "Sourcing",
+        "config": {}
+      },
+      "measured": {
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "sci-supplier-segmentation-1758263578682",
+      "position": {
+        "x": 82.92422339699289,
+        "y": -427.69487557839983
+      },
+      "type": "custom",
+      "data": {
+        "label": "SCI: Supplier Segmentation",
+        "vertical": "SCI",
+        "subtype": "Supplier Segmentation",
+        "config": {}
+      },
+      "measured": {
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "bi-reporting-1758263648896",
+      "position": {
+        "x": 600.0428812645835,
+        "y": -432.9613473138212
+      },
+      "type": "custom",
+      "data": {
+        "label": "BI: Reporting",
         "vertical": "BI",
         "subtype": "Reporting",
         "config": {
-          "dataSource": {
-            "type": "api",
-            "endpoint": "https://api.stockfeed.example.com/ticks",
-            "notes": "Real-time price variance and VIX proxy"
-          }
+          "transforms": [
+            {
+              "type": "lm-studio-summary"
+            }
+          ]
         }
       },
       "measured": {
-        "width": 280,
-        "height": 110
-      }
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "bi-data-exploration-1758263655654",
+      "position": {
+        "x": 598.610930222377,
+        "y": -579.003434389869
+      },
+      "type": "custom",
+      "data": {
+        "label": "BI: Data Exploration",
+        "vertical": "BI",
+        "subtype": "Data Exploration",
+        "config": {}
+      },
+      "measured": {
+        "width": 300,
+        "height": 111
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "osint-technical-mapping-1758263050758-copy-1758265386491-571",
+      "position": {
+        "x": -400.3896477790405,
+        "y": -402.59321407055353
+      },
+      "type": "custom",
+      "data": {
+        "label": "OSINT: Technical Mapping",
+        "vertical": "OSINT",
+        "subtype": "Technical Mapping",
+        "config": {
+          "transforms": [
+            {
+              "type": "lm-studio-summary"
+            }
+          ]
+        }
+      },
+      "measured": {
+        "width": 397,
+        "height": 453
+      },
+      "selected": false,
+      "dragging": false,
+      "width": 397,
+      "height": 453,
+      "resizing": false
     }
   ],
   "edges": [
     {
-      "id": "e-policy-fundraising",
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "political-clique-core-1758263168400",
+      "target": "policy-implementation",
+      "id": "xy-edge__political-clique-core-1758263168400-policy-implementation"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "political-actor-1758263162496",
+      "target": "policy-implementation",
+      "id": "xy-edge__political-actor-1758263162496-policy-implementation"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
       "source": "policy-implementation",
-      "target": "fundraising-screening",
-      "animated": true
+      "target": "sci-supplier-segmentation-1758263578682",
+      "id": "xy-edge__policy-implementation-sci-supplier-segmentation-1758263578682",
+      "selected": false
     },
     {
-      "id": "e-fundraising-sci",
-      "source": "fundraising-screening",
-      "target": "sci-shipping",
-      "animated": true
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "sci-supplier-segmentation-1758263578682",
+      "target": "sci-sourcing-1758263211666",
+      "id": "xy-edge__sci-supplier-segmentation-1758263578682-sci-sourcing-1758263211666"
     },
     {
-      "id": "e-sci-bi",
-      "source": "sci-shipping",
-      "target": "bi-market-volatility",
-      "animated": true
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "sci-sourcing-1758263211666",
+      "target": "sci-manufacturing-1758263102442",
+      "id": "xy-edge__sci-sourcing-1758263211666-sci-manufacturing-1758263102442"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "sci-manufacturing-1758263102442",
+      "target": "bi-data-exploration-1758263655654",
+      "id": "xy-edge__sci-manufacturing-1758263102442-bi-data-exploration-1758263655654"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "sci-manufacturing-1758263102442",
+      "target": "bi-reporting-1758263648896",
+      "id": "xy-edge__sci-manufacturing-1758263102442-bi-reporting-1758263648896"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "osint-technical-mapping-1758263050758-copy-1758265386491-571",
+      "target": "sci-supplier-segmentation-1758263578682",
+      "id": "xy-edge__osint-technical-mapping-1758263050758-copy-1758265386491-571-sci-supplier-segmentation-1758263578682"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "osint-technical-mapping-1758263050758-copy-1758265386491-571",
+      "target": "sci-sourcing-1758263211666",
+      "id": "xy-edge__osint-technical-mapping-1758263050758-copy-1758265386491-571-sci-sourcing-1758263211666"
+    },
+    {
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#7c88a1",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#7c88a1"
+      },
+      "source": "osint-technical-mapping-1758263050758-copy-1758265386491-571",
+      "target": "sci-manufacturing-1758263102442",
+      "id": "xy-edge__osint-technical-mapping-1758263050758-copy-1758265386491-571-sci-manufacturing-1758263102442"
     }
   ]
 }
