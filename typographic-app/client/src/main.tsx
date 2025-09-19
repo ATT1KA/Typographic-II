@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import './styles/global.css';
 
 const Explorer = lazy(() => import('./pages/Explorer'));
@@ -25,8 +25,9 @@ function App() {
         <main className="main">
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
-              <Route path="/" element={<Onboarding />} />
+              <Route path="/" element={<Navigate to="/workflow" replace />} />
               <Route path="/explorer" element={<Explorer />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/workflow" element={<WorkflowBuilder />} />
               <Route path="/dashboards" element={<DashboardBuilder />} />
               <Route path="/reports" element={<Reports />} />

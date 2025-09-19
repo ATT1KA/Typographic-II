@@ -109,7 +109,7 @@ export default function WorkflowBuilder() {
   const [workflowId, setWorkflowId] = useState('default');
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
-  const apiUrl = `http://localhost:5176/api/flow/${workflowId}`;
+  const apiUrl = `/api/flow/${workflowId}`;
 
   const attachCallbacks = useCallback((nds: Node<NodeData>[]) => {
     return nds.map((n) => ({

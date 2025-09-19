@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "flow": "node index.js",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
