@@ -7,13 +7,17 @@
   ],
   "packageManager": "npm@10.8.2",
   "scripts": {
-  "dev": "concurrently -n client,api,flow -c green,blue,magenta \"npm:dev --workspace=client\" \"npm:dev --workspace=server\" \"npm:flow --workspace=server\"",
+    "dev": "concurrently -n client,api,flow -c green,blue,magenta \"npm:dev --workspace=client\" \"npm:dev --workspace=server\" \"npm:flow --workspace=server\"",
     "build": "npm run build -w client && npm run build -w server",
     "lint": "npm run lint -w client && npm run lint -w server",
     "test": "npm run test -w client && npm run test -w server"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.5.2",
     "concurrently": "^8.2.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }

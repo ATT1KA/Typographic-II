@@ -84,16 +84,11 @@ export default function NodeLibrary({
   // removed withAlpha helper as category bars are now full opacity
 
   const Section = ({ title, items }: { title: VerticalKey; items: LibraryItem[] }) => (
-    <details open data-vertical={title}>
+    <details open data-vertical={title} className="rail-section">
       <summary
         data-title={title}
         style={{
-          padding: '8px 10px',
-          cursor: 'pointer',
-          borderRadius: 3,
-          border: '1px solid var(--control-border)',
-          background: verticalColors[title],
-          color: 'var(--text)'
+          background: verticalColors[title]
         }}
       >
         {title}
@@ -118,7 +113,18 @@ export default function NodeLibrary({
   const tabs: NodeCategory[] = ['Data', 'Connectivity', 'Transformation', 'Output'];
 
   return (
-    <div className={`rail ${open ? 'open' : ''}`} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'var(--panel-w, 320px)', pointerEvents: 'none', zIndex: 14 }}>
+    <div
+      className={`rail ${open ? 'open' : ''}`}
+      style={{
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 'var(--panel-w, 320px)',
+        pointerEvents: open ? 'auto' : 'none',
+        zIndex: 14,
+      }}
+    >
       <div className="rail-backdrop" onClick={onToggle} />
       <div className="rail-inner">
         <div className="rail-handle" style={{ pointerEvents: 'auto' }}>

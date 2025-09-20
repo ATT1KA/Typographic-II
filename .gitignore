@@ -1,0 +1,49 @@
+# Repo-level ignores
+# Node dependencies
+node_modules/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Environment
+.env
+.env.*.local
+.env.local
+
+# Logs
+npm-debug.log*
+*.log
+
+# Build outputs
+dist/
+build/
+.out/
+
+# Coverage
+coverage/
+.vitest/
+.nyc_output/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Lockfiles (if using workspaces but not committing lockfile for packages)
+# package-lock.json
+
+# OneDrive / OS sync artifacts
+~$*
+
+# Ignore node global cache
+.npm
+
+# Keep default fixture file in server/data but ignore other runtime data
+typographic-app/server/data/
+!typographic-app/server/data/default.json

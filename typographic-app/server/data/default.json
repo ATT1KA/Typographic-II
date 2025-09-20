@@ -3,8 +3,8 @@
     {
       "id": "fundraising-screening",
       "position": {
-        "x": -264,
-        "y": -504
+        "x": -600,
+        "y": -744
       },
       "type": "custom",
       "data": {
@@ -21,16 +21,18 @@
         "category": "Data"
       },
       "measured": {
-        "width": 300,
-        "height": 119
+        "width": 288,
+        "height": 96
       },
       "selected": false,
-      "dragging": true
+      "dragging": true,
+      "width": 288,
+      "height": 96
     },
     {
       "id": "sci-shipping",
       "position": {
-        "x": 72,
+        "x": -408,
         "y": -360
       },
       "type": "custom",
@@ -49,19 +51,19 @@
       },
       "measured": {
         "width": 336,
-        "height": 144
+        "height": 96
       },
       "selected": false,
       "dragging": true,
       "width": 336,
-      "height": 144,
+      "height": 96,
       "resizing": false
     },
     {
       "id": "bi-market-volatility",
       "position": {
-        "x": 456,
-        "y": -168
+        "x": -24,
+        "y": -648
       },
       "type": "custom",
       "data": {
@@ -79,7 +81,36 @@
       },
       "measured": {
         "width": 300,
-        "height": 119
+        "height": 118
+      },
+      "selected": false,
+      "dragging": true
+    },
+    {
+      "id": "connectivity-causal-router-1758355003726",
+      "position": {
+        "x": -264,
+        "y": -696
+      },
+      "type": "custom",
+      "data": {
+        "label": "Causal Router",
+        "vertical": "Connectivity",
+        "subtype": "Causal Router",
+        "category": "Connectivity",
+        "config": {
+          "logic": {
+            "type": "router",
+            "params": {
+              "strategy": "causal",
+              "threshold": 0.6
+            }
+          }
+        }
+      },
+      "measured": {
+        "width": 160,
+        "height": 74
       },
       "selected": false,
       "dragging": true

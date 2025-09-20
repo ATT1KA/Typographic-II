@@ -1,0 +1,15 @@
+# Client-specific ignores
+node_modules/
+dist/
+.vite/
+build/
+npm-debug.log*
+.env
+.env.local
+.env.*.local
+
+# Vite cache
+node_modules/.vite
+
+# Local IDE
+.vscode/

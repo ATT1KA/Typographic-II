@@ -1,0 +1,21 @@
+# Server-specific ignores
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+logs/
+*.log
+coverage/
+
+# Runtime data - keep default.json tracked
+data/
+!data/default.json
+
+# tsx cache / ts-node cache
+*.tsbuildinfo
+
+# Local IDE
+.vscode/
