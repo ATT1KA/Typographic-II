@@ -12,7 +12,7 @@ export default function HealthStatus() {
       try {
   const apiRes = await fetch('/api/health');
         const apiOk = apiRes.ok;
-        const flowRes = await fetch('/api/flow/default');
+  const flowRes = await fetch('/api/flow/_health');
         const flowOk = flowRes.ok;
         if (!cancel) {
           setApi({ ok: apiOk, label: 'API' });

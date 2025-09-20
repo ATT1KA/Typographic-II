@@ -250,11 +250,19 @@ export default function WorkflowBuilder() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.nodes) && data.nodes.length) {
-            // migrate legacy data
-            const migratedNodes: Node<NodeData>[] = (data.nodes as Node<NodeData>[]).map((n) => ({
-              ...n,
-              data: { ...(n.data || {}), category: (n.data as any)?.category ?? 'Data' }
-            }));
+            // migrate legacy data (ensure Connectivity is logic-only)
+            const migratedNodes: Node<NodeData>[] = (data.nodes as Node<NodeData>[]).map((n) => {
+              const cat = ((n.data as any)?.category ?? (['Connectivity','Transformation','Output'].includes(String((n.data as any)?.vertical)) ? (n.data as any).vertical : 'Data')) as NodeCategory;
+              const cfg = { ...((n.data as any)?.config || {}) } as any;
+              if (cat === 'Connectivity') {
+                delete cfg.dataSource; delete cfg.transforms; delete cfg.outputs;
+                cfg.logic = cfg.logic || {};
+              }
+              return {
+                ...n,
+                data: { ...(n.data || {}), category: cat, config: cfg }
+              } as Node<NodeData>;
+            });
             const migratedEdges: Edge[] = (Array.isArray(data.edges) ? data.edges : []).map((e: any) => ({
               ...e,
               data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
@@ -285,6 +293,12 @@ export default function WorkflowBuilder() {
   const sanitizeNodes = useCallback((nds: Node<NodeData>[]) => nds.map((n) => {
     const d = { ...(n.data || {}) } as any;
     if (d.onChange) delete d.onChange;
+    const cat = (d.category ?? (['Connectivity','Transformation','Output'].includes(String(d.vertical)) ? d.vertical : 'Data'));
+    if (cat === 'Connectivity') {
+      const cfg = { ...(d.config || {}) };
+      delete cfg.dataSource; delete cfg.transforms; delete cfg.outputs;
+      d.config = { ...cfg, logic: cfg.logic || (Object.keys(cfg).length ? cfg : {}) };
+    }
     return { ...n, data: d };
   }), []);
 
@@ -316,10 +330,15 @@ export default function WorkflowBuilder() {
         throw new Error(err.error || 'Load failed');
       }
       const data = await res.json();
-      const migratedNodes: Node<NodeData>[] = (data.nodes || []).map((n: Node<NodeData>) => ({
-        ...n,
-        data: { ...(n.data || {}), category: (n.data as any)?.category ?? 'Data' }
-      }));
+      const migratedNodes: Node<NodeData>[] = (data.nodes || []).map((n: Node<NodeData>) => {
+        const cat = ((n.data as any)?.category ?? (['Connectivity','Transformation','Output'].includes(String((n.data as any)?.vertical)) ? (n.data as any).vertical : 'Data')) as NodeCategory;
+        const cfg = { ...((n.data as any)?.config || {}) } as any;
+        if (cat === 'Connectivity') {
+          delete cfg.dataSource; delete cfg.transforms; delete cfg.outputs;
+          cfg.logic = cfg.logic || {};
+        }
+        return { ...n, data: { ...(n.data || {}), category: cat, config: cfg } } as Node<NodeData>;
+      });
       const migratedEdges: Edge[] = (data.edges || []).map((e: any) => ({
         ...e,
         data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
@@ -379,10 +398,10 @@ export default function WorkflowBuilder() {
 
   // Non-Data catalogs for NodeLibrary
   const connectivityItems: BaseItem[] = [
-    { vertical: 'Connectivity' as any, label: 'Causal Inference', subtype: 'Causal Inference', sampleConfig: { method: 'granger', confidence: 0.95, lags: 2 } },
-    { vertical: 'Connectivity' as any, label: 'Correlation Connector', subtype: 'Correlation Connector', sampleConfig: { metric: 'pearson', threshold: 0.5 } },
-    { vertical: 'Connectivity' as any, label: 'Dependency Path', subtype: 'Dependency Path', sampleConfig: { algorithm: 'bfs', maxHops: 5 } },
-    { vertical: 'Connectivity' as any, label: 'Feedback Connector', subtype: 'Feedback Connector', sampleConfig: { iterations: 10, convergence: 0.001 } },
+    { vertical: 'Connectivity' as any, label: 'Causal Router', subtype: 'Causal Router', sampleConfig: { type: 'router', params: { strategy: 'causal', threshold: 0.6 } } },
+    { vertical: 'Connectivity' as any, label: 'Correlation Router', subtype: 'Correlation Router', sampleConfig: { type: 'router', params: { strategy: 'correlation', metric: 'pearson', min: 0.5 } } },
+    { vertical: 'Connectivity' as any, label: 'Dependency Router', subtype: 'Dependency Router', sampleConfig: { type: 'join', params: { algorithm: 'bfs', maxHops: 5 } } },
+    { vertical: 'Connectivity' as any, label: 'Feedback Connector', subtype: 'Feedback Connector', sampleConfig: { type: 'feedback', params: { iterations: 10 } } },
   ];
   const transformationItems: BaseItem[] = [
     { vertical: 'Transformation' as any, label: 'Aggregation Transformer', subtype: 'Aggregation Transformer', sampleConfig: { fn: 'mean', groupBy: ['region'] } },
@@ -405,11 +424,13 @@ export default function WorkflowBuilder() {
       position: { x: 120 + Math.round(Math.random() * 80), y: 120 + Math.round(Math.random() * 80) },
       type: 'custom',
       data: {
-        label: `${item.vertical}: ${item.subtype}`,
+        label: item.category === 'Connectivity' ? String(item.subtype) : `${item.vertical}: ${item.subtype}`,
         vertical: item.vertical as NodeData['vertical'],
         subtype: item.subtype,
-        category: item.category ?? 'Data',
-        config: (item as any).sampleConfig ?? {}
+            category: item.category ?? 'Data',
+            config: (item.category === 'Connectivity')
+              ? { logic: (item as any).sampleConfig ?? {} }
+              : ((item as any).sampleConfig ?? {})
       }
     };
     setNodes((curr) => curr.concat(attachCallbacks([newNode])));

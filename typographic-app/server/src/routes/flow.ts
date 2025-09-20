@@ -4,44 +4,46 @@ import path from 'path';
 
 const router = Router();
 
-const dataDir = path.join(process.cwd(), 'data');
-const flowPath = path.join(dataDir, 'flow.json');
+// Data directory containing saved flows (matches existing files)
+const DATA_DIR = path.resolve(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-function ensureFiles() {
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(flowPath)) {
-    fs.writeFileSync(flowPath, JSON.stringify({ nodes: [], edges: [] }, null, 2), 'utf-8');
-  }
-}
-
-router.get('/', (_req, res) => {
+router.get('/_health', (_req, res) => {
   try {
-    ensureFiles();
-    const json = fs.readFileSync(flowPath, 'utf-8');
-    res.type('application/json').send(json);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to read flow file' });
+    const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'));
+    res.json({ ok: true, files });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'filesystem' });
   }
 });
 
-router.post('/', (req, res) => {
+router.get('/:id', (req, res) => {
+  const id = (req.params.id || 'default').trim();
+  const file = path.join(DATA_DIR, `${id}.json`);
   try {
-    const { nodes, edges } = req.body || {};
-    if (!Array.isArray(nodes) || !Array.isArray(edges)) {
-      return res.status(400).json({ error: 'Invalid payload' });
+    if (!fs.existsSync(file)) {
+      return res.json({ nodes: [], edges: [] });
     }
+    const json = fs.readFileSync(file, 'utf8');
+    const data = JSON.parse(json);
+    if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+      return res.status(500).json({ error: 'Invalid flow data structure' });
+    }
+    return res.json(data);
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to load flow' });
+  }
+});
 
-    const cleanNodes = nodes.map((n: any) => {
-      const d = { ...(n.data || {}) };
-      if (d.onChange) delete (d as any).onChange;
-      return { ...n, data: d };
-    });
-
-    ensureFiles();
-    fs.writeFileSync(flowPath, JSON.stringify({ nodes: cleanNodes, edges }, null, 2), 'utf-8');
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to write flow file' });
+router.post('/:id', (req, res) => {
+  const id = (req.params.id || 'default').trim();
+  const file = path.join(DATA_DIR, `${id}.json`);
+  const payload = req.body || {};
+  try {
+    fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
+    return res.json({ ok: true, id });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to save flow' });
   }
 });
 

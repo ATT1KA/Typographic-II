@@ -1,5 +1,5 @@
-import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
-import { useMemo, useState } from 'react';
+import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
 
@@ -15,6 +15,60 @@ export default function CustomNode(props: NodeProps) {
   const ds = config.dataSource ?? {};
   const transforms = config.transforms ?? [];
   const outputs = config.outputs ?? [];
+  const isConnectivity = (data.category ?? (data.vertical as any)) === 'Connectivity';
+  const updateNodeInternals = useUpdateNodeInternals();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const lastUnselectedWidth = useRef<number | null>(null);
+  const lastUnselectedHeight = useRef<number | null>(null);
+
+  // Track the node's width while unselected so we can lock to it on selection
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (!selected) {
+      // Use offsetWidth for layout width excluding transforms
+      lastUnselectedWidth.current = root.offsetWidth;
+      lastUnselectedHeight.current = root.offsetHeight;
+    }
+  }, [selected]);
+
+  // When selected (clicked), expand node height to fit content without changing width.
+  useEffect(() => {
+    const root = rootRef.current;
+    const body = bodyRef.current;
+    if (!root || !body) return;
+    if (selected) {
+      // Capture pre-expansion height/width once when entering selected state
+      if (lastUnselectedHeight.current == null) {
+        lastUnselectedHeight.current = root.offsetHeight;
+      }
+      const lockWidth = lastUnselectedWidth.current ?? root.offsetWidth;
+      root.style.width = `${lockWidth}px`; // lock to pre-selection width
+      const prevOverflow = body.style.overflowY;
+      body.style.overflowY = 'visible';
+      // Allow layout to settle before measuring
+      requestAnimationFrame(() => {
+        // Set height to content height
+        root.style.height = 'auto';
+        const targetHeight = root.scrollHeight; // include open form, etc.
+        root.style.height = `${targetHeight}px`;
+        updateNodeInternals((props as any).id ?? '');
+      });
+      return () => { body.style.overflowY = prevOverflow; };
+    } else {
+      // restore when deselected: width auto and height to pre-selection value
+      root.style.width = '';
+      const restoreH = lastUnselectedHeight.current;
+      if (restoreH && Number.isFinite(restoreH)) {
+        root.style.height = `${restoreH}px`;
+      } else {
+        root.style.height = '';
+      }
+      body.style.overflowY = '';
+      updateNodeInternals((props as any).id ?? '');
+    }
+  }, [selected, open, config, updateNodeInternals, props]);
 
   const updateConfig = (key: keyof typeof config, value: any) => {
     data.onChange?.({ config: { ...config, [key]: value } });
@@ -45,86 +99,133 @@ export default function CustomNode(props: NodeProps) {
     else if (key === 'outputs') updateConfig('outputs', value.split('\n').filter(Boolean));
   };
 
-  const headStyle = useMemo(
-    () => ({ background: verticalColors[data.vertical as keyof typeof verticalColors], color: 'var(--text)' }),
-    [data.vertical]
-  );
+  const headStyle = useMemo((): CSSProperties => {
+    if (isConnectivity) {
+      return {
+        background: 'linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), black 8%), color-mix(in oklab, var(--bg-elev), black 18%))',
+        color: 'var(--text)'
+      };
+    }
+    return { background: verticalColors[data.vertical as keyof typeof verticalColors], color: 'var(--text)' };
+  }, [isConnectivity, data.vertical]);
 
   return (
-    <div className={`node-card ${selected ? 'selected' : ''} vertical-${String(data.vertical || '').toLowerCase()}`}>
-      <NodeResizer isVisible={!!selected} minWidth={300} minHeight={200} lineStyle={{ stroke: '#3d4557' }} handleStyle={{ width: 8, height: 8, borderRadius: 2 }} />
+    <div ref={rootRef} className={`node-card ${selected ? 'selected' : ''} vertical-${String(data.vertical || '').toLowerCase()} ${isConnectivity ? 'node-connectivity' : ''}`}>
+      <NodeResizer isVisible={!!selected} minWidth={isConnectivity ? 160 : 300} minHeight={isConnectivity ? 110 : 200} lineStyle={{ stroke: '#3d4557' }} handleStyle={{ width: 8, height: 8, borderRadius: 2 }} />
 
       <div className="node-head" style={headStyle}>
-        <div className="node-title">{data.label}</div>
-        <div className="node-sub">{data.vertical} • {data.subtype}</div>
+        <div className="node-title">{isConnectivity ? String(data.subtype || '').toLowerCase() : data.label}</div>
+        {!isConnectivity && (
+          <div className="node-sub">{data.vertical} • {data.subtype}</div>
+        )}
       </div>
 
-      <div className="node-body" onKeyDownCapture={(e) => e.stopPropagation()}>
+  <div ref={bodyRef} className="node-body" onKeyDownCapture={(e) => e.stopPropagation()}>
         <button className="node-toggle" onClick={() => setOpen((v) => !v)}>
           {open ? 'Hide config' : 'Edit config'}
         </button>
         {open && (
           <div className="node-form">
-            <label style={{ fontSize: 12 }}>
-              Data Source Type
-              <select value={ds.type || 'api'} onChange={(e) => updateConfig('dataSource', { ...ds, type: e.target.value })}>
-                <option value="api">API</option>
-                <option value="db">Database</option>
-                <option value="file">File</option>
-              </select>
-            </label>
-            <label style={{ fontSize: 12 }}>
-              Endpoint {errors.endpoint && <span style={{ color: 'red' }}>{errors.endpoint}</span>}
-              <input
-                type="text"
-                value={ds.endpoint || ''}
-                placeholder="https://api.example.com/endpoint"
-                onChange={(e) => validateAndUpdate('endpoint', e.target.value, validateUrl)}
-              />
-            </label>
-            <label style={{ fontSize: 12 }}>
-              Notes
-              <textarea
-                value={ds.notes || ''}
-                onChange={(e) => validateAndUpdate('notes', e.target.value)}
-              />
-            </label>
-            <div>
-              <label style={{ fontSize: 12 }}>Transforms</label>
-              {transforms.map((t: any, idx: number) => (
-                <div key={idx} style={{ marginBottom: 8, padding: 8, border: '1px solid var(--control-border)', borderRadius: 8, background: 'var(--control-bg)' }}>
-                  <select value={t.type} onChange={(e) => updateTransform(idx, { type: e.target.value })}>
-                    <option value="aggregation">Aggregation</option>
-                    <option value="anomaly-detection">Anomaly Detection</option>
-                    <option value="lm-studio-summary">LM Studio Summary</option>
+            {isConnectivity ? (
+              <>
+                <label style={{ fontSize: 12 }}>
+                  Logic Type
+                  <select
+                    value={(config.logic?.type as string) || 'router'}
+                    onChange={(e) => updateConfig('logic', { ...(config.logic || {}), type: e.target.value })}
+                  >
+                    <option value="router">Router</option>
+                    <option value="join">Join</option>
+                    <option value="split">Split</option>
+                    <option value="feedback">Feedback</option>
+                    <option value="causal-graph">Causal Graph (static)</option>
                   </select>
-                  {t.type === 'lm-studio-summary' && (
-                    <>
-                      <input
-                        placeholder="LM Endpoint"
-                        value={t.params?.endpoint || ''}
-                        onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } })}
-                      />
-                      <textarea
-                        placeholder="Prompt"
-                        value={t.params?.prompt || ''}
-                        onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } })}
-                      />
-                    </>
-                  )}
-                  <button onClick={() => removeTransform(idx)} style={{ marginTop: 4 }}>Remove</button>
+                </label>
+                <label style={{ fontSize: 12 }}>
+                  Parameters (JSON)
+                  <textarea
+                    value={JSON.stringify(config.logic?.params || {}, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const v = JSON.parse(e.target.value || '{}');
+                        updateConfig('logic', { ...(config.logic || {}), params: v });
+                        setErrors((prev) => ({ ...prev, logic: '' }));
+                      } catch {
+                        setErrors((prev) => ({ ...prev, logic: 'Invalid JSON' }));
+                      }
+                    }}
+                    style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }}
+                  />
+                </label>
+                {errors.logic && <div style={{ color: 'red', fontSize: 12 }}>{errors.logic}</div>}
+                <div style={{ fontSize: 11, opacity: 0.8 }}>
+                  Connectivity nodes are logical routers only. They do not fetch data or call models.
                 </div>
-              ))}
-              <button onClick={addTransform} style={{ fontSize: 12 }}>Add Transform</button>
-            </div>
-            <label style={{ fontSize: 12 }}>
-              Outputs (one per line)
-              <textarea
-                value={outputs.join('\n')}
-                placeholder="dashboard: /dash/markets\nalerts: slack://#markets"
-                onChange={(e) => validateAndUpdate('outputs', e.target.value)}
-              />
-            </label>
+              </>
+            ) : (
+              <>
+                <label style={{ fontSize: 12 }}>
+                  Data Source Type
+                  <select value={ds.type || 'api'} onChange={(e) => updateConfig('dataSource', { ...ds, type: e.target.value })}>
+                    <option value="api">API</option>
+                    <option value="db">Database</option>
+                    <option value="file">File</option>
+                  </select>
+                </label>
+                <label style={{ fontSize: 12 }}>
+                  Endpoint {errors.endpoint && <span style={{ color: 'red' }}>{errors.endpoint}</span>}
+                  <input
+                    type="text"
+                    value={ds.endpoint || ''}
+                    placeholder="https://api.example.com/endpoint"
+                    onChange={(e) => validateAndUpdate('endpoint', e.target.value, validateUrl)}
+                  />
+                </label>
+                <label style={{ fontSize: 12 }}>
+                  Notes
+                  <textarea
+                    value={ds.notes || ''}
+                    onChange={(e) => validateAndUpdate('notes', e.target.value)}
+                  />
+                </label>
+                <div>
+                  <label style={{ fontSize: 12 }}>Transforms</label>
+                  {transforms.map((t: any, idx: number) => (
+                    <div key={idx} style={{ marginBottom: 8, padding: 8, border: '1px solid var(--control-border)', borderRadius: 8, background: 'var(--control-bg)' }}>
+                      <select value={t.type} onChange={(e) => updateTransform(idx, { type: e.target.value })}>
+                        <option value="aggregation">Aggregation</option>
+                        <option value="anomaly-detection">Anomaly Detection</option>
+                        <option value="lm-studio-summary">LM Studio Summary</option>
+                      </select>
+                      {t.type === 'lm-studio-summary' && (
+                        <>
+                          <input
+                            placeholder="LM Endpoint"
+                            value={t.params?.endpoint || ''}
+                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } })}
+                          />
+                          <textarea
+                            placeholder="Prompt"
+                            value={t.params?.prompt || ''}
+                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } })}
+                          />
+                        </>
+                      )}
+                      <button onClick={() => removeTransform(idx)} style={{ marginTop: 4 }}>Remove</button>
+                    </div>
+                  ))}
+                  <button onClick={addTransform} style={{ fontSize: 12 }}>Add Transform</button>
+                </div>
+                <label style={{ fontSize: 12 }}>
+                  Outputs (one per line)
+                  <textarea
+                    value={outputs.join('\n')}
+                    placeholder="dashboard: /dash/markets\nalerts: slack://#markets"
+                    onChange={(e) => validateAndUpdate('outputs', e.target.value)}
+                  />
+                </label>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -173,13 +274,18 @@ export default function CustomNode(props: NodeProps) {
           const isIn = p.direction === 'in';
           const offset = 12 + i * 14;
           const color = p.kind === 'meta' ? '#e05555' : '#9a9a9a';
+          const tooltip = `${p.kind === 'meta' ? 'Meta' : 'Data'} ${isIn ? 'In' : 'Out'}`;
           return (
             <Handle
               key={p.id}
               id={p.id}
               type={isIn ? 'target' : 'source'}
               position={isIn ? Position.Left : Position.Right}
-              style={{ top: offset, background: color, border: `1px solid ${color}` }}
+              className={`node-port node-port--${p.kind} node-port--${p.direction}`}
+              data-tooltip={tooltip}
+              title={tooltip}
+              aria-label={tooltip}
+              style={{ top: offset, background: color, border: `1px solid ${color}`, ['--port-top' as any]: `${offset}px` }}
             />
           );
         });

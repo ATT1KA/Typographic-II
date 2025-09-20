@@ -17,6 +17,7 @@ export type NodeData = {
     maxConnections?: number | 'many';
   }>;
   config?: {
+    /** For Data/Transformation/Output nodes */
     dataSource?: {
       type?: 'api' | 'db' | 'file';
       endpoint?: string;
@@ -28,6 +29,10 @@ export type NodeData = {
       | { type: 'anomaly-detection'; params?: Record<string, unknown> }
     >;
     outputs?: string[];
+    /** For Connectivity nodes: pure routing/logic parameters (no IO config) */
+    logic?: Record<string, unknown>;
+    /** Allow additional ad-hoc config keys (e.g., method, threshold, etc.) */
+    [key: string]: any;
   };
   onChange?: (partial: Partial<NodeData>) => void;
 };

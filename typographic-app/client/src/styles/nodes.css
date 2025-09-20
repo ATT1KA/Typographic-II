@@ -1,9 +1,26 @@
-.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2); box-sizing: border-box; }
+.node-connectivity { min-width: 160px; }
+.node-card.selected.node-connectivity { max-width: 100%; }
+.node-connectivity, .node-connectivity * { box-sizing: border-box; }
+.node-connectivity { max-width: 100%; overflow: hidden; }
+.node-connectivity .node-head { padding: 6px 10px; }
+.node-connectivity .node-title { font-size: 12px; font-weight: 700; text-transform: none; }
+.node-connectivity .node-body { padding: 8px; gap: 6px; min-width: 0; max-width: 100%; overflow-x: hidden; }
+.node-connectivity .node-toggle { font-size: 11px; padding: 4px 8px; border-radius: 4px; }
+.node-connectivity .node-form { gap: 6px; min-width: 0; max-width: 100%; overflow-x: hidden; }
+.node-connectivity .node-form label { font-size: 11px; max-width: 100%; }
+.node-connectivity .node-form input, .node-connectivity .node-form textarea, .node-connectivity .node-form select { padding: 6px 8px; font-size: 11px; }
+.node-connectivity .node-form textarea { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; width: 100%; max-width: 100%; }
 .node-card.selected { border-color: color-mix(in oklab, var(--control-border), white 25%); }
 .node-head { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid var(--control-border); display: grid; gap: 6px; border-top-left-radius: 10px; border-top-right-radius: 10px; color: var(--text); }
 .node-title { font-weight: 700; line-height: 1; }
 .node-sub { font-size: 12px; opacity: 0.8; }
 .node-head .node-title, .node-head .node-sub { text-shadow: 0 0 2px rgba(0,0,0,0.9); }
+/* Connectivity nodes: distinct chrome to differentiate from Data nodes */
+.node-connectivity { border-style: dashed; }
+.node-connectivity .node-head { background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), black 8%), color-mix(in oklab, var(--bg-elev), black 18%)); }
+.node-connectivity .node-title { letter-spacing: 0.2px; }
+.node-connectivity .node-toggle { background: #141414; }
 /* Outline header text for SCI vertical with yellow header background */
 .vertical-sci .node-head .node-title,
 .vertical-sci .node-head .node-sub {
@@ -127,3 +144,38 @@
   box-shadow: 0 0 0 2px rgba(248,248,245,0.95);
   outline: none;
 }
+
+/* Port tooltips: uniform, professional, hover-only */
+.node-port { position: absolute; width: 10px; height: 10px; border-radius: 50%; display: block; }
+.node-port.react-flow__handle { width: 10px; height: 10px; }
+.node-port[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 0;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(18,18,18,0.95);
+  color: #f2f2f2;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.1;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 20;
+}
+.node-port[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(2px);
+}
+
+/* Ensure left/right handles stay attached to the node edges with uniform spacing */
+.react-flow__handle-left.node-port { left: -5px !important; }
+.react-flow__handle-right.node-port { right: -5px !important; }
+
+/* Prevent pseudo-elements from affecting layout or accidentally capturing events */
+.node-port::after { pointer-events: none; }

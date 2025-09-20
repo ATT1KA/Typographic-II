@@ -1,37 +1,10 @@
 {
   "nodes": [
     {
-      "id": "policy-implementation",
-      "position": {
-        "x": 128.0854853072128,
-        "y": -99.05609973285843
-      },
-      "type": "custom",
-      "data": {
-        "label": "Policy Implementation (Delays)",
-        "vertical": "Policymaking",
-        "subtype": "Implementation",
-        "config": {
-          "dataSource": {
-            "type": "api",
-            "endpoint": "https://api.example.com/policy/status",
-            "notes": "Tracks rollout milestones and blockers"
-          }
-        },
-        "category": "Data"
-      },
-      "measured": {
-        "width": 300,
-        "height": 115
-      },
-      "selected": false,
-      "dragging": false
-    },
-    {
       "id": "fundraising-screening",
       "position": {
-        "x": 237.8806767586821,
-        "y": 143.50845948352622
+        "x": -39.39355282169042,
+        "y": -99.68706211277512
       },
       "type": "custom",
       "data": {
@@ -49,7 +22,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 115
+        "height": 119
       },
       "selected": false,
       "dragging": false
@@ -57,8 +30,8 @@
     {
       "id": "sci-shipping",
       "position": {
-        "x": 585.9661620658949,
-        "y": 157.39982190561005
+        "x": 355.76444660283886,
+        "y": 3.516480460486285
       },
       "type": "custom",
       "data": {
@@ -76,16 +49,19 @@
       },
       "measured": {
         "width": 327,
-        "height": 115
+        "height": 166
       },
       "selected": false,
-      "dragging": false
+      "dragging": false,
+      "width": 327,
+      "height": 166,
+      "resizing": false
     },
     {
       "id": "bi-market-volatility",
       "position": {
         "x": 968.2457702582367,
-        "y": 170.2226179875334
+        "y": 172.7682152004629
       },
       "type": "custom",
       "data": {
@@ -105,49 +81,9 @@
         "width": 300,
         "height": 115
       },
-      "selected": true,
+      "selected": false,
       "dragging": false
     }
   ],
-  "edges": [
-    {
-      "id": "e-policy-fundraising",
-      "source": "policy-implementation",
-      "target": "fundraising-screening",
-      "animated": true,
-      "data": {
-        "kind": "data"
-      },
-      "style": {
-        "stroke": "#9a9a9a",
-        "strokeWidth": 2
-      }
-    },
-    {
-      "id": "e-fundraising-sci",
-      "source": "fundraising-screening",
-      "target": "sci-shipping",
-      "animated": true,
-      "data": {
-        "kind": "data"
-      },
-      "style": {
-        "stroke": "#9a9a9a",
-        "strokeWidth": 2
-      }
-    },
-    {
-      "id": "e-sci-bi",
-      "source": "sci-shipping",
-      "target": "bi-market-volatility",
-      "animated": true,
-      "data": {
-        "kind": "data"
-      },
-      "style": {
-        "stroke": "#9a9a9a",
-        "strokeWidth": 2
-      }
-    }
-  ]
+  "edges": []
 }
