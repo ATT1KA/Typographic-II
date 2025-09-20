@@ -82,7 +82,13 @@
 .header-actions { display: flex; align-items: center; gap: var(--space-3); }
 .icon-btn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--control-bg); border: 1px solid var(--control-border); color: var(--text); }
 .icon-btn:hover { border-color: color-mix(in oklab, var(--control-border), white 20%); }
-.icon-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.icon-btn:focus, .icon-btn:focus-visible {
+  /* Override broad global focus rule (which uses var(--ring)) so the header Settings
+     button doesn't show the purple outline. Use a neutral, subtle focus instead. */
+  outline: 2px solid rgba(255,255,255,0.06) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) inset !important;
+}
 .flow-surface { margin: 0; border-radius: 0; background: var(--bg); border: none; box-shadow: none; position: relative; overflow: hidden; }
 .pill { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -199,19 +205,32 @@
   border-radius: 4px !important;
 }
 .workflow-controls input {
-  padding: 8px 12px;
-  height: 40px;
+  padding: 4px 6px;
+  height: 20px;
   width: 120px;
   background: var(--control-bg);
   border: 1px solid var(--control-border);
   color: var(--text);
 }
 .workflow-controls button {
-  padding: 10px 16px;
-  height: 40px;
+  padding: 5px 8px;
+  height: 20px;
   background: var(--control-bg);
   border: 1px solid var(--control-border);
   color: var(--text);
+  /* Subtle 1px inner bevel: light top, dark bottom */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.28);
+  /* Use the monospace UI font for consistent typespace and compact metrics */
+  font-family: var(--font-mono);
+  font-size: 13px; /* small but readable */
+  line-height: 1; /* keep text vertically centered inside the smaller height */
+  white-space: nowrap; /* avoid wrapping which would increase height */
+  overflow: hidden; /* prevent text overflowing the rounded corners */
+  text-overflow: ellipsis; /* visually contain long labels */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box; /* ensure padding included in height */
 }
 
 /* Controls positioned left of minimap */
