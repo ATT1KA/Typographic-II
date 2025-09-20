@@ -1,22 +1,35 @@
 import { Fragment } from 'react';
 import { verticalColors } from '../types/flow';
+import type { NodeCategory } from '../types/flow';
 
 export type VerticalKey = 'BI' | 'Political' | 'Policymaking' | 'Fundraising' | 'OSINT' | 'SCI';
 
 export type LibraryItem = {
-  vertical: VerticalKey;
+  vertical: VerticalKey | 'Connectivity' | 'Transformation' | 'Output';
   label: string; // display label
   subtype: string;
+  category?: NodeCategory;
+  sampleConfig?: Record<string, unknown>;
 };
 
 export default function NodeLibrary({
   open,
   onToggle,
   onAdd,
+  category = 'Data',
+  onCategoryChange,
+  connectivityItems = [],
+  transformationItems = [],
+  outputItems = [],
 }: {
   open: boolean;
   onToggle: () => void;
   onAdd: (item: LibraryItem) => void;
+  category?: NodeCategory;
+  onCategoryChange?: (c: NodeCategory) => void;
+  connectivityItems?: LibraryItem[];
+  transformationItems?: LibraryItem[];
+  outputItems?: LibraryItem[];
 }) {
   const lib: Record<VerticalKey, LibraryItem[]> = {
     BI: [
@@ -102,6 +115,8 @@ export default function NodeLibrary({
     </details>
   );
 
+  const tabs: NodeCategory[] = ['Data', 'Connectivity', 'Transformation', 'Output'];
+
   return (
     <div className={`rail ${open ? 'open' : ''}`} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'var(--panel-w, 320px)', pointerEvents: 'none', zIndex: 14 }}>
       <div className="rail-backdrop" onClick={onToggle} />
@@ -109,15 +124,50 @@ export default function NodeLibrary({
         <div className="rail-handle" style={{ pointerEvents: 'auto' }}>
           <button className="rail-toggle" onClick={onToggle} title={open ? 'Collapse' : 'Expand'}>{open ? '←' : '→'}</button>
         </div>
-  <div className="rail-panel">
+        <div className="rail-panel">
           <div style={{ fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>Node Library</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>Browse and add nodes by category</div>
-          <div style={{ height: 8 }} />
-          {Object.entries(lib).map(([k, items]) => (
-            <Fragment key={k}>
-              <Section title={k as VerticalKey} items={items as LibraryItem[]} />
-            </Fragment>
-          ))}
+          {/* Tabs inside the panel header (grid makes equal-width buttons) */}
+            <div className="node-library">
+              <div className="lib-tabs">
+            {tabs.map((t) => (
+              <button
+                key={t}
+                className={`lib-tab ${category === t ? 'active' : ''}`}
+                onClick={() => onCategoryChange?.(t)}
+                title={`${t} Nodes`}
+              >
+                {t}
+              </button>
+            ))}
+              </div>
+          {/* Body switches between Data (existing) and new catalogs */}
+          {category === 'Data' ? (
+            <>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Browse and add nodes by vertical</div>
+              <div style={{ height: 8 }} />
+              {Object.entries(lib).map(([k, items]) => (
+                <Fragment key={k}>
+                  <Section title={k as VerticalKey} items={items as LibraryItem[]} />
+                </Fragment>
+              ))}
+            </>
+          ) : (
+            <div className="rail-list" style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+              {(category === 'Connectivity' ? connectivityItems : category === 'Transformation' ? transformationItems : outputItems).map((item) => (
+                <button
+                  key={`${item.vertical}-${item.subtype}`}
+                  className="rail-item"
+                  style={{ justifyContent: 'space-between' }}
+                  onClick={() => onAdd({ ...item, category })}
+                  title={`Add ${item.vertical}: ${item.subtype}`}
+                >
+                  <span>{item.subtype}</span>
+                  <span style={{ fontSize: 11, opacity: 0.75 }}>{category}</span>
+                </button>
+              ))}
+            </div>
+          )}
+            </div>
         </div>
       </div>
     </div>

@@ -1,9 +1,21 @@
-export type Vertical = 'BI' | 'Political' | 'Policymaking' | 'Fundraising' | 'OSINT' | 'SCI';
+export type Vertical = 'BI' | 'Political' | 'Policymaking' | 'Fundraising' | 'OSINT' | 'SCI' | 'Connectivity' | 'Transformation' | 'Output';
+
+export type NodeCategory = 'Data' | 'Connectivity' | 'Transformation' | 'Output';
+export type PortKind = 'data' | 'meta';
 
 export type NodeData = {
   label: string;
   vertical: Vertical;
   subtype: string;
+  /** Optional high-level grouping; defaults to 'Data' for legacy nodes */
+  category?: NodeCategory;
+  /** Optional explicit ports; if absent, defaults are derived from category */
+  ports?: Array<{
+    id: string;
+    direction: 'in' | 'out';
+    kind: PortKind;
+    maxConnections?: number | 'many';
+  }>;
   config?: {
     dataSource?: {
       type?: 'api' | 'db' | 'file';
@@ -28,5 +40,8 @@ export const verticalColors: Record<Vertical, string> = {
   Policymaking: '#6c5ce7',// purple
   Fundraising: '#22c55e', // green
   OSINT: '#00b894',       // teal
-  SCI: '#fdcb6e'          // amber
+  SCI: '#fdcb6e',         // amber
+  Connectivity: '#8ab4ff',
+  Transformation: '#ffb86c',
+  Output: '#88d498'
 };

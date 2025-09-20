@@ -15,8 +15,8 @@ import '@xyflow/react/dist/style.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
-import NodeLibrary, { type LibraryItem } from '../components/NodeLibrary';
-import { type NodeData, verticalColors } from '../types/flow';
+import NodeLibrary, { type LibraryItem as BaseItem } from '../components/NodeLibrary';
+import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -92,9 +92,9 @@ const seedNodes: Node<NodeData>[] = [
 ];
 
 const seedEdges: Edge[] = [
-  { id: 'e-policy-fundraising', source: 'policy-implementation', target: 'fundraising-screening', animated: true },
-  { id: 'e-fundraising-sci', source: 'fundraising-screening', target: 'sci-shipping', animated: true },
-  { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true }
+  { id: 'e-policy-fundraising', source: 'policy-implementation', target: 'fundraising-screening', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } },
+  { id: 'e-fundraising-sci', source: 'fundraising-screening', target: 'sci-shipping', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } },
+  { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } }
 ];
 
 function WorkflowCanvas({
@@ -195,6 +195,7 @@ export default function WorkflowBuilder() {
     const v = localStorage.getItem('wfSidebarOpen');
     return v === null ? true : v === 'true';
   });
+  const [libraryCategory, setLibraryCategory] = useState<NodeCategory>('Data');
   const initialLoadedRef = useRef(false);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
@@ -213,6 +214,34 @@ export default function WorkflowBuilder() {
     }));
   }, [setNodes]);
 
+  // Helpers for port kinds and cycle checks
+  type PortKind = 'data' | 'meta';
+  const parseKind = (handleId?: string | null): PortKind =>
+    (handleId && handleId.toLowerCase().includes('meta')) ? 'meta' : 'data';
+  const edgeStyleFor = (k: PortKind) =>
+    k === 'meta' ? { stroke: '#e05555', strokeWidth: 2 } : { stroke: '#9a9a9a', strokeWidth: 2 };
+  const isFeedbackNode = (n?: Node<NodeData>) =>
+    !!n && ((n.data?.vertical === 'Connectivity' && /feedback/i.test(String(n.data?.subtype))) ||
+            /feedback/i.test(String(n.data?.label)));
+  const wouldCreateCycle = (allEdges: Edge[], trySource: string, tryTarget: string) => {
+    const adj = new Map<string, string[]>();
+    for (const e of allEdges) {
+      const list = adj.get(e.source) || [];
+      list.push(e.target);
+      adj.set(e.source, list);
+    }
+    const seen = new Set<string>();
+    const stack = [tryTarget];
+    while (stack.length) {
+      const n = stack.pop()!;
+      if (n === trySource) return true;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      for (const nxt of (adj.get(n) || [])) stack.push(nxt);
+    }
+    return false;
+  };
+
   // initial load with seed fallback
   useEffect(() => {
     (async () => {
@@ -221,8 +250,18 @@ export default function WorkflowBuilder() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.nodes) && data.nodes.length) {
-            setNodes(attachCallbacks(data.nodes));
-            setEdges(Array.isArray(data.edges) ? data.edges : []);
+            // migrate legacy data
+            const migratedNodes: Node<NodeData>[] = (data.nodes as Node<NodeData>[]).map((n) => ({
+              ...n,
+              data: { ...(n.data || {}), category: (n.data as any)?.category ?? 'Data' }
+            }));
+            const migratedEdges: Edge[] = (Array.isArray(data.edges) ? data.edges : []).map((e: any) => ({
+              ...e,
+              data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
+              style: e.style || edgeStyleFor((e.data && e.data.kind) || 'data')
+            }));
+            setNodes(attachCallbacks(migratedNodes));
+            setEdges(migratedEdges);
             initialLoadedRef.current = true;
             return;
           }
@@ -261,9 +300,7 @@ export default function WorkflowBuilder() {
         const err = await res.json();
         throw new Error(err.error || 'Save failed');
       }
-      if (!opts?.silent) {
-        toast.success('Saved', { icon: false });
-      }
+      if (!opts?.silent) { toast.success('Saved', { icon: false }); }
     } catch (e) {
       toast.error(`Save failed: ${String(e)}`);
     } finally {
@@ -279,16 +316,47 @@ export default function WorkflowBuilder() {
         throw new Error(err.error || 'Load failed');
       }
       const data = await res.json();
-  setNodes(attachCallbacks(data.nodes || []));
-  setEdges(data.edges || []);
+      const migratedNodes: Node<NodeData>[] = (data.nodes || []).map((n: Node<NodeData>) => ({
+        ...n,
+        data: { ...(n.data || {}), category: (n.data as any)?.category ?? 'Data' }
+      }));
+      const migratedEdges: Edge[] = (data.edges || []).map((e: any) => ({
+        ...e,
+        data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
+        style: e.style || edgeStyleFor((e.data && e.data.kind) || 'data')
+      }));
+      setNodes(attachCallbacks(migratedNodes));
+      setEdges(migratedEdges);
     } catch (e) {
       toast.error(`Load failed: ${String(e)}`);
     }
   }, [apiUrl, attachCallbacks, setNodes, setEdges]);
 
   const onConnect = useCallback((connection: Connection) => {
-    setEdges((eds) => addEdge({ ...connection, animated: true }, eds));
-  }, [setEdges]);
+    const { source, target, sourceHandle, targetHandle } = connection;
+    if (!source || !target) return;
+    const kindS = parseKind(sourceHandle);
+    const kindT = parseKind(targetHandle);
+    if (kindS !== kindT) {
+      toast.error('Port kinds must match (data↔data, meta↔meta).', { icon: false });
+      return;
+    }
+    const allowCycle =
+      isFeedbackNode(nodes.find(n => n.id === source)) ||
+      isFeedbackNode(nodes.find(n => n.id === target));
+    if (!allowCycle && wouldCreateCycle(edges, source, target)) {
+      toast.error('Connection would create a cycle. Use a Feedback Connector for loops.', { icon: false });
+      return;
+    }
+    const kind: PortKind = kindS;
+    setEdges((eds) => addEdge({
+      ...connection,
+      animated: true,
+      data: { ...(connection as any).data, kind },
+      style: edgeStyleFor(kind),
+      markerEnd: { type: 'arrowclosed', color: kind === 'meta' ? '#e05555' : '#9a9a9a' }
+    }, eds));
+  }, [edges, nodes, setEdges]);
 
   // autosave a short time after nodes/edges change, only after initial load (silent)
   useEffect(() => {
@@ -309,7 +377,27 @@ export default function WorkflowBuilder() {
     markerEnd: { type: 'arrowclosed' as const, color: '#9a9a9a' }
   }), []);
 
-  const addFromLibrary = useCallback((item: LibraryItem) => {
+  // Non-Data catalogs for NodeLibrary
+  const connectivityItems: BaseItem[] = [
+    { vertical: 'Connectivity' as any, label: 'Causal Inference', subtype: 'Causal Inference', sampleConfig: { method: 'granger', confidence: 0.95, lags: 2 } },
+    { vertical: 'Connectivity' as any, label: 'Correlation Connector', subtype: 'Correlation Connector', sampleConfig: { metric: 'pearson', threshold: 0.5 } },
+    { vertical: 'Connectivity' as any, label: 'Dependency Path', subtype: 'Dependency Path', sampleConfig: { algorithm: 'bfs', maxHops: 5 } },
+    { vertical: 'Connectivity' as any, label: 'Feedback Connector', subtype: 'Feedback Connector', sampleConfig: { iterations: 10, convergence: 0.001 } },
+  ];
+  const transformationItems: BaseItem[] = [
+    { vertical: 'Transformation' as any, label: 'Aggregation Transformer', subtype: 'Aggregation Transformer', sampleConfig: { fn: 'mean', groupBy: ['region'] } },
+    { vertical: 'Transformation' as any, label: 'Normalization Transformer', subtype: 'Normalization Transformer', sampleConfig: { method: 'zscore' } },
+    { vertical: 'Transformation' as any, label: 'Enrichment Transformer', subtype: 'Enrichment Transformer', sampleConfig: { source: 'sentiment-api', merge: 'left' } },
+    { vertical: 'Transformation' as any, label: 'Filtering Transformer', subtype: 'Filtering Transformer', sampleConfig: { where: 'risk > 0.15', op: 'AND' } },
+  ];
+  const outputItems: BaseItem[] = [
+    { vertical: 'Output' as any, label: 'Dashboard Generator', subtype: 'Dashboard Generator', sampleConfig: { frequency: '10m', layout: 'grid' } },
+    { vertical: 'Output' as any, label: 'Visualization Exporter', subtype: 'Visualization Exporter', sampleConfig: { frequency: '1h', format: 'png' } },
+    { vertical: 'Output' as any, label: 'Report Compiler', subtype: 'Report Compiler', sampleConfig: { frequency: 'weekly', format: 'pdf' } },
+    { vertical: 'Output' as any, label: 'Alert/Export', subtype: 'Alert/Export', sampleConfig: { frequency: 'on-change', format: 'csv' } },
+  ];
+
+  const addFromLibrary = useCallback((item: BaseItem & { category?: NodeCategory }) => {
     const idBase = `${item.vertical.toLowerCase()}-${item.subtype.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}`;
     const id = `${idBase}-${Date.now()}`;
     const newNode: Node<NodeData> = {
@@ -320,7 +408,8 @@ export default function WorkflowBuilder() {
         label: `${item.vertical}: ${item.subtype}`,
         vertical: item.vertical as NodeData['vertical'],
         subtype: item.subtype,
-        config: {}
+        category: item.category ?? 'Data',
+        config: (item as any).sampleConfig ?? {}
       }
     };
     setNodes((curr) => curr.concat(attachCallbacks([newNode])));
@@ -393,7 +482,16 @@ export default function WorkflowBuilder() {
       toastClassName="toast-acrylic toast-compact"
       className="toast-container-flow"
     />
-      <NodeLibrary open={sidebarOpen} onToggle={() => setSidebarOpen((v) => !v)} onAdd={addFromLibrary} />
+      <NodeLibrary
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((v) => !v)}
+        onAdd={addFromLibrary}
+        category={libraryCategory}
+        onCategoryChange={setLibraryCategory}
+        connectivityItems={connectivityItems}
+        transformationItems={transformationItems}
+        outputItems={outputItems}
+      />
   <div style={{ position: 'relative', height: '100%' }}>
   <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>

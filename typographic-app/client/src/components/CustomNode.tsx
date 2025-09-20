@@ -1,6 +1,6 @@
 import { Handle, Position, type NodeProps, NodeResizer } from '@xyflow/react';
 import { useMemo, useState } from 'react';
-import { type NodeData, verticalColors } from '../types/flow';
+import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
 
 const validateUrl = (url: string) => /^https?:\/\/.+/.test(url);
@@ -129,8 +129,61 @@ export default function CustomNode(props: NodeProps) {
         )}
       </div>
 
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} />
+      {(() => {
+        // Infer category for legacy nodes
+        const category: NodeCategory = (data.category ??
+          (['Connectivity','Transformation','Output'] as const).includes(data.vertical as any)
+            ? (data.vertical as NodeCategory)
+            : 'Data');
+
+        // Defaults per category
+        const defaults =
+          category === 'Connectivity'
+            ? [
+                { id: 'data-in-a', direction: 'in' as const, kind: 'data' as const },
+                { id: 'data-in-b', direction: 'in' as const, kind: 'data' as const },
+                { id: 'data-out', direction: 'out' as const, kind: 'data' as const },
+                { id: 'meta-in', direction: 'in' as const, kind: 'meta' as const },
+                { id: 'meta-out', direction: 'out' as const, kind: 'meta' as const },
+              ]
+            : category === 'Transformation'
+            ? [
+                { id: 'data-in', direction: 'in' as const, kind: 'data' as const },
+                { id: 'data-out', direction: 'out' as const, kind: 'data' as const },
+                { id: 'meta-in', direction: 'in' as const, kind: 'meta' as const },
+                { id: 'meta-out', direction: 'out' as const, kind: 'meta' as const },
+              ]
+            : category === 'Output'
+            ? [
+                { id: 'data-in', direction: 'in' as const, kind: 'data' as const },
+                { id: 'meta-in', direction: 'in' as const, kind: 'meta' as const },
+                { id: 'meta-out', direction: 'out' as const, kind: 'meta' as const },
+              ]
+            : [
+                { id: 'data-in', direction: 'in' as const, kind: 'data' as const },
+                { id: 'data-out', direction: 'out' as const, kind: 'data' as const },
+                { id: 'meta-out', direction: 'out' as const, kind: 'meta' as const },
+              ];
+
+        const ports = (data.ports && data.ports.length ? data.ports : defaults) as Array<{
+          id: string; direction: 'in' | 'out'; kind: 'data' | 'meta';
+        }>;
+
+        return ports.map((p, i) => {
+          const isIn = p.direction === 'in';
+          const offset = 12 + i * 14;
+          const color = p.kind === 'meta' ? '#e05555' : '#9a9a9a';
+          return (
+            <Handle
+              key={p.id}
+              id={p.id}
+              type={isIn ? 'target' : 'source'}
+              position={isIn ? Position.Left : Position.Right}
+              style={{ top: offset, background: color, border: `1px solid ${color}` }}
+            />
+          );
+        });
+      })()}
     </div>
   );
 }

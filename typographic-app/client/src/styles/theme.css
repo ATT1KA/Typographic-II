@@ -24,8 +24,8 @@
   /* Explicit control colors */
   --control-bg: var(--bg-elev-2);
   --control-border: color-mix(in oklab, var(--border), white 10%);
-  --radius: 4px;
-  --radius-sm: 4px;
+  --radius: 3px;
+  --radius-sm: 3px;
   --radius-lg: 6px;
   --shadow-1: 0 6px 20px rgba(0,0,0,0.25);
   --shadow-2: 0 20px 60px rgba(0,0,0,0.35);
@@ -103,8 +103,8 @@
 .rail-inner { height: 100%; display: grid; grid-template-columns: var(--rail-w) 1fr; pointer-events: none; }
 .rail-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 12; }
 .rail.open .rail-backdrop { opacity: 1; pointer-events: auto; }
-.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: var(--control-bg); border-right: 1px solid var(--control-border); z-index: 15; }
-.rail-toggle { margin-top: 10px; width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
+.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: linear-gradient(180deg, rgb(18 17 18 / 36%), rgba(12,14,22,0.36)); border-right: 1px solid var(--control-border); z-index: 15; }
+.rail-toggle { margin: 10px 0 0 0; width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
 
 /* Strong override: replace purple focus/active outline on the rail toggle */
@@ -116,7 +116,7 @@
 
 /* Remove any fallback overlay for the rail-toggle */
 .rail-toggle::after { display: none !important; }
-.rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
+.rail-panel { height: 100%; pointer-events: auto; background: linear-gradient(180deg, rgb(18 17 18 / 20%), rgba(12, 14, 22, 0.2)); border-right: 1px solid var(--control-border); box-shadow: 0 4px 4px rgba(0,0,0,0.18); padding: 12px; overflow: auto; transform: translateX(-100%); transition: transform 200ms ease; position: relative; z-index: 13; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail.open .rail-panel { transform: translateX(0); }
 /* Ensure no peek when closed */
 .rail:not(.open) .rail-panel { visibility: hidden; }
@@ -334,3 +334,80 @@
   .reactflow-controls-left-of-minimap { right: calc(var(--minimap-w) + var(--gap) + 12px); bottom: 12px; }
   .react-flow__minimap { transform: scale(0.98); }
 }
+
+/* Remove any legacy floating catalog UI */
+.library-launcher, .node-flyout { display: none !important; }
+
+/* In-panel tabs inside existing NodeLibrary */
+.lib-tab {
+  font: 600 11px/1.2 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace);
+  color: #e7e7e7;
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  padding: 6px 10px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.28);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.lib-tab.active { background: #191919; border-color: #333; }
+
+/* Remove purple focus ring and use a subtle darker background on focus */
+.lib-tab:focus,
+.lib-tab:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  background: #151515; /* slightly darker than normal */
+  border-color: #323232;
+}
+
+/* Keep active state visually consistent with keyboard focus */
+.lib-tab.active:focus,
+.lib-tab.active:focus-visible {
+  background: #161616;
+  border-color: #2f2f2f;
+}
+
+/* Tabs grid: 2 equal columns; 3rd/4th wrap beneath 1st/2nd */
+.lib-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  /* single internal gap used to center the fading divider reliably */
+  --lib-gap-total: 21px; /* previous padding-bottom (13) + previous margin-bottom (8) */
+  --lib-line-thickness: 2px;
+  padding-bottom: var(--lib-gap-total);
+  margin-bottom: 0; /* remove external margin so pseudo-element can center inside padding */
+  position: relative; /* needed for pseudo-element positioning */
+}
+.lib-tabs .lib-tab { width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Replace the hard border with a centered 2px line that fades at the edges */
+.lib-tabs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* center the line inside the total internal gap */
+  bottom: calc((var(--lib-gap-total) - var(--lib-line-thickness)) / 2);
+  height: var(--lib-line-thickness);
+  pointer-events: none;
+  /* Create a horizontal gradient: transparent -> semi-white line -> transparent */
+  background: linear-gradient(
+    to right,
+    transparent 7%,
+    rgba(255,255,255,0.12) 15%,
+    rgba(255,255,255,0.12) 85%,
+    transparent 93%
+  );
+  transform-origin: center;
+}
+
+/* No viewport breakpoints needed; buttons always stack 2x2 inside the rail */
+
+/* Slightly larger handle hit-area (ported for visibility) */
+.react-flow__handle { width: 10px; height: 10px; border-radius: 50%; }
