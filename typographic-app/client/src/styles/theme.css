@@ -103,7 +103,7 @@
 .rail-inner { height: 100%; display: grid; grid-template-columns: var(--rail-w) 1fr; pointer-events: none; }
 .rail-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 12; }
 .rail.open .rail-backdrop { opacity: 1; pointer-events: auto; }
-.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: linear-gradient(180deg, rgb(18 17 18 / 36%), rgba(12,14,22,0.36)); border-right: 1px solid var(--control-border); z-index: 15; }
+.rail-handle { width: var(--rail-w); height: 100%; pointer-events: auto; display: grid; grid-auto-rows: max-content 1fr; align-items: start; justify-items: center; background: linear-gradient(180deg, rgb(18 17 18 / 36%), rgba(12,14,22,0.36)); border-right: 1px solid var(--control-border); z-index: 15; backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
 .rail-toggle { margin: 10px 0 0 0; width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
 .rail-toggle:hover { color: var(--text); border-color: color-mix(in oklab, var(--control-border), white 20%); }
 

@@ -1,5 +1,6 @@
 import { ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { unstable_batchedUpdates } from 'react-dom';
 import {
   Background,
   Controls,
@@ -15,8 +16,10 @@ import '@xyflow/react/dist/style.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
-import NodeLibrary, { type LibraryItem as BaseItem } from '../components/NodeLibrary';
+import { type LibraryItem as BaseItem } from '../components/NodeLibrary';
+const NodeLibrary = lazy(() => import('../components/NodeLibrary'));
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
+import { GRID_SIZE, roundToGrid, roundToGridOffset, GRID_OFFSET } from '../constants/grid';
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
@@ -117,6 +120,20 @@ function WorkflowCanvas({
   sidebarOpen: boolean;
 }) {
   const rf = useReactFlow();
+  const wrapperRef = useRef<HTMLElement | null>(null);
+  const minimapRef = useRef<HTMLElement | null>(null);
+
+  // Simple throttle function
+  const throttle = (func: Function, limit: number) => {
+    let inThrottle: boolean;
+    return function(this: any, ...args: any[]) {
+      if (!inThrottle) {
+        func.apply(this, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  };
 
   // fit view on sidebar toggle
   useEffect(() => {
@@ -129,9 +146,11 @@ function WorkflowCanvas({
   // position the controls wrapper to the left of the minimap with an 8px gap
   useEffect(() => {
   const gap = 1;
-    const wrapper = document.querySelector('.reactflow-controls-left-of-minimap') as HTMLElement | null;
-    const minimap = document.querySelector('.react-flow__minimap') as HTMLElement | null;
+    wrapperRef.current = document.querySelector('.reactflow-controls-left-of-minimap') as HTMLElement | null;
+    minimapRef.current = document.querySelector('.react-flow__minimap') as HTMLElement | null;
     function position() {
+      const wrapper = wrapperRef.current;
+      const minimap = minimapRef.current;
       if (!wrapper || !minimap) return;
       const mmRect = minimap.getBoundingClientRect();
       // position wrapper left of minimap, vertically centered
@@ -143,18 +162,26 @@ function WorkflowCanvas({
       wrapper.style.left = `${left}px`;
       wrapper.style.top = `${clampedTop}px`;
     }
-    position();
-    const ro = new ResizeObserver(position);
-    try { if (minimap) ro.observe(minimap); } catch {}
-    window.addEventListener('resize', position);
+    const throttledPosition = throttle(position, 200);
+    throttledPosition();
+    const ro = new ResizeObserver(throttledPosition);
+    try { if (minimapRef.current) ro.observe(minimapRef.current); } catch {}
+    window.addEventListener('resize', throttledPosition);
     // also reposition on scroll so the wrapper stays vertically centered relative to viewport minimap
-    window.addEventListener('scroll', position, { passive: true });
+    window.addEventListener('scroll', throttledPosition, { passive: true });
     return () => {
-      window.removeEventListener('resize', position);
-      window.removeEventListener('scroll', position);
+      window.removeEventListener('resize', throttledPosition);
+      window.removeEventListener('scroll', throttledPosition);
       try { ro.disconnect(); } catch {}
     };
   }, [sidebarOpen]);
+
+  const onNodeDragStop = useCallback((_e: any, n: Node<NodeData>) => {
+    const snapped = { x: roundToGridOffset(n.position.x, GRID_SIZE, GRID_OFFSET), y: roundToGridOffset(n.position.y, GRID_SIZE, GRID_OFFSET) };
+    if (snapped.x !== n.position.x || snapped.y !== n.position.y) {
+      rf.setNodes((nds) => nds.map((m) => (m.id === n.id ? { ...m, position: snapped } : m)));
+    }
+  }, [rf]);
 
   return (
     <ReactFlow
@@ -165,14 +192,16 @@ function WorkflowCanvas({
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       defaultEdgeOptions={defaultEdgeOptions}
+      nodeOrigin={[0, 0]}
+      onNodeDragStop={onNodeDragStop}
       connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2 }}
-      fitView
+      fitView={false}
     >
       <MiniMap
-        nodeColor={(n) => {
+        nodeColor={useCallback((n: Node) => {
           const v = (n as any)?.data?.vertical as keyof typeof verticalColors | undefined;
           return (v && verticalColors[v]) || '#5a5a5a';
-        }}
+        }, [])}
         nodeStrokeColor="#0a0a0a"
         maskColor="rgba(0,0,0,0.55)"
         pannable
@@ -181,7 +210,7 @@ function WorkflowCanvas({
       <div className="reactflow-controls-left-of-minimap">
         <Controls />
       </div>
-  <Background gap={24} size={1} color="#202020" />
+  <Background gap={GRID_SIZE} size={2} color="#303030" />
     </ReactFlow>
   );
 }
@@ -216,14 +245,14 @@ export default function WorkflowBuilder() {
 
   // Helpers for port kinds and cycle checks
   type PortKind = 'data' | 'meta';
-  const parseKind = (handleId?: string | null): PortKind =>
-    (handleId && handleId.toLowerCase().includes('meta')) ? 'meta' : 'data';
-  const edgeStyleFor = (k: PortKind) =>
-    k === 'meta' ? { stroke: '#e05555', strokeWidth: 2 } : { stroke: '#9a9a9a', strokeWidth: 2 };
-  const isFeedbackNode = (n?: Node<NodeData>) =>
+  const parseKind = useCallback((handleId?: string | null): PortKind =>
+    (handleId && handleId.toLowerCase().includes('meta')) ? 'meta' : 'data', []);
+  const edgeStyleFor = useCallback((k: PortKind) =>
+    k === 'meta' ? { stroke: '#e05555', strokeWidth: 2 } : { stroke: '#9a9a9a', strokeWidth: 2 }, []);
+  const isFeedbackNode = useCallback((n?: Node<NodeData>) =>
     !!n && ((n.data?.vertical === 'Connectivity' && /feedback/i.test(String(n.data?.subtype))) ||
-            /feedback/i.test(String(n.data?.label)));
-  const wouldCreateCycle = (allEdges: Edge[], trySource: string, tryTarget: string) => {
+            /feedback/i.test(String(n.data?.label))), []);
+  const wouldCreateCycle = useCallback((allEdges: Edge[], trySource: string, tryTarget: string) => {
     const adj = new Map<string, string[]>();
     for (const e of allEdges) {
       const list = adj.get(e.source) || [];
@@ -240,7 +269,7 @@ export default function WorkflowBuilder() {
       for (const nxt of (adj.get(n) || [])) stack.push(nxt);
     }
     return false;
-  };
+  }, []);
 
   // initial load with seed fallback
   useEffect(() => {
@@ -268,7 +297,14 @@ export default function WorkflowBuilder() {
               data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
               style: e.style || edgeStyleFor((e.data && e.data.kind) || 'data')
             }));
-            setNodes(attachCallbacks(migratedNodes));
+            // snap positions and sizes to grid on load
+            const snapped = migratedNodes.map((n) => ({
+              ...n,
+              position: { x: roundToGridOffset(n.position.x), y: roundToGridOffset(n.position.y) },
+              width: n.width ? roundToGrid(n.width) : n.width,
+              height: n.height ? roundToGrid(n.height) : n.height,
+            }));
+            setNodes(attachCallbacks(snapped));
             setEdges(migratedEdges);
             initialLoadedRef.current = true;
             return;
@@ -276,7 +312,10 @@ export default function WorkflowBuilder() {
         }
       } catch {}
       // seed and persist once if empty
-      const seededNodes = attachCallbacks(seedNodes);
+      const seededNodes = attachCallbacks(seedNodes.map((n) => ({
+        ...n,
+        position: { x: roundToGridOffset(n.position.x), y: roundToGridOffset(n.position.y) }
+      })));
       setNodes(seededNodes);
       setEdges(seedEdges);
       try {
@@ -344,7 +383,13 @@ export default function WorkflowBuilder() {
         data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
         style: e.style || edgeStyleFor((e.data && e.data.kind) || 'data')
       }));
-      setNodes(attachCallbacks(migratedNodes));
+      const snapped = migratedNodes.map((n) => ({
+        ...n,
+        position: { x: roundToGridOffset(n.position.x), y: roundToGridOffset(n.position.y) },
+        width: n.width ? roundToGrid(n.width) : n.width,
+        height: n.height ? roundToGrid(n.height) : n.height,
+      }));
+      setNodes(attachCallbacks(snapped));
       setEdges(migratedEdges);
     } catch (e) {
       toast.error(`Load failed: ${String(e)}`);
@@ -380,7 +425,7 @@ export default function WorkflowBuilder() {
   // autosave a short time after nodes/edges change, only after initial load (silent)
   useEffect(() => {
     if (!initialLoadedRef.current) return;
-    const t = setTimeout(() => { void saveFlow({ silent: true }); }, 800);
+    const t = setTimeout(() => { void saveFlow({ silent: true }); }, 1500);
     return () => clearTimeout(t);
   }, [nodes, edges, saveFlow]);
 
@@ -397,31 +442,31 @@ export default function WorkflowBuilder() {
   }), []);
 
   // Non-Data catalogs for NodeLibrary
-  const connectivityItems: BaseItem[] = [
+  const connectivityItems: BaseItem[] = useMemo(() => [
     { vertical: 'Connectivity' as any, label: 'Causal Router', subtype: 'Causal Router', sampleConfig: { type: 'router', params: { strategy: 'causal', threshold: 0.6 } } },
     { vertical: 'Connectivity' as any, label: 'Correlation Router', subtype: 'Correlation Router', sampleConfig: { type: 'router', params: { strategy: 'correlation', metric: 'pearson', min: 0.5 } } },
     { vertical: 'Connectivity' as any, label: 'Dependency Router', subtype: 'Dependency Router', sampleConfig: { type: 'join', params: { algorithm: 'bfs', maxHops: 5 } } },
     { vertical: 'Connectivity' as any, label: 'Feedback Connector', subtype: 'Feedback Connector', sampleConfig: { type: 'feedback', params: { iterations: 10 } } },
-  ];
-  const transformationItems: BaseItem[] = [
+  ], []);
+  const transformationItems: BaseItem[] = useMemo(() => [
     { vertical: 'Transformation' as any, label: 'Aggregation Transformer', subtype: 'Aggregation Transformer', sampleConfig: { fn: 'mean', groupBy: ['region'] } },
     { vertical: 'Transformation' as any, label: 'Normalization Transformer', subtype: 'Normalization Transformer', sampleConfig: { method: 'zscore' } },
     { vertical: 'Transformation' as any, label: 'Enrichment Transformer', subtype: 'Enrichment Transformer', sampleConfig: { source: 'sentiment-api', merge: 'left' } },
     { vertical: 'Transformation' as any, label: 'Filtering Transformer', subtype: 'Filtering Transformer', sampleConfig: { where: 'risk > 0.15', op: 'AND' } },
-  ];
-  const outputItems: BaseItem[] = [
+  ], []);
+  const outputItems: BaseItem[] = useMemo(() => [
     { vertical: 'Output' as any, label: 'Dashboard Generator', subtype: 'Dashboard Generator', sampleConfig: { frequency: '10m', layout: 'grid' } },
     { vertical: 'Output' as any, label: 'Visualization Exporter', subtype: 'Visualization Exporter', sampleConfig: { frequency: '1h', format: 'png' } },
     { vertical: 'Output' as any, label: 'Report Compiler', subtype: 'Report Compiler', sampleConfig: { frequency: 'weekly', format: 'pdf' } },
     { vertical: 'Output' as any, label: 'Alert/Export', subtype: 'Alert/Export', sampleConfig: { frequency: 'on-change', format: 'csv' } },
-  ];
+  ], []);
 
   const addFromLibrary = useCallback((item: BaseItem & { category?: NodeCategory }) => {
     const idBase = `${item.vertical.toLowerCase()}-${item.subtype.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}`;
     const id = `${idBase}-${Date.now()}`;
     const newNode: Node<NodeData> = {
       id,
-      position: { x: 120 + Math.round(Math.random() * 80), y: 120 + Math.round(Math.random() * 80) },
+  position: { x: roundToGridOffset(120 + Math.round(Math.random() * 80)), y: roundToGridOffset(120 + Math.round(Math.random() * 80)) },
       type: 'custom',
       data: {
         label: item.category === 'Connectivity' ? String(item.subtype) : `${item.vertical}: ${item.subtype}`,
@@ -433,7 +478,9 @@ export default function WorkflowBuilder() {
               : ((item as any).sampleConfig ?? {})
       }
     };
-    setNodes((curr) => curr.concat(attachCallbacks([newNode])));
+    unstable_batchedUpdates(() => {
+      setNodes((curr) => curr.concat(attachCallbacks([newNode])));
+    });
   }, [setNodes, attachCallbacks]);
 
   const duplicateSelected = useCallback(() => {
@@ -446,7 +493,7 @@ export default function WorkflowBuilder() {
       return {
         ...n,
         id: newId,
-        position: { x: n.position.x + 30, y: n.position.y + 30 },
+  position: { x: roundToGridOffset(n.position.x + 30), y: roundToGridOffset(n.position.y + 30) },
         selected: false,
       } as Node<NodeData>;
     });
@@ -459,15 +506,19 @@ export default function WorkflowBuilder() {
         target: idMap.get(e.target) || e.target,
         selected: false,
       }));
-    setNodes((curr) => curr.concat(attachCallbacks(clones)));
-    setEdges((curr) => curr.concat(newEdges));
+    unstable_batchedUpdates(() => {
+      setNodes((curr) => curr.concat(attachCallbacks(clones)));
+      setEdges((curr) => curr.concat(newEdges));
+    });
   }, [nodes, edges, attachCallbacks, setNodes, setEdges]);
 
   const deleteSelected = useCallback(() => {
     const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id));
     if (!selectedIds.size) return;
-    setNodes((curr) => curr.filter((n) => !selectedIds.has(n.id)));
-    setEdges((curr) => curr.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
+    unstable_batchedUpdates(() => {
+      setNodes((curr) => curr.filter((n) => !selectedIds.has(n.id)));
+      setEdges((curr) => curr.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
+    });
   }, [nodes, setNodes, setEdges]);
 
   // keyboard shortcuts
@@ -503,6 +554,7 @@ export default function WorkflowBuilder() {
       toastClassName="toast-acrylic toast-compact"
       className="toast-container-flow"
     />
+      <Suspense fallback={<div>Loading...</div>}>
       <NodeLibrary
         open={sidebarOpen}
         onToggle={() => setSidebarOpen((v) => !v)}
@@ -513,6 +565,7 @@ export default function WorkflowBuilder() {
         transformationItems={transformationItems}
         outputItems={outputItems}
       />
+      </Suspense>
   <div style={{ position: 'relative', height: '100%' }}>
   <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>

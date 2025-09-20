@@ -3,8 +3,8 @@
     {
       "id": "fundraising-screening",
       "position": {
-        "x": -39.39355282169042,
-        "y": -99.68706211277512
+        "x": -264,
+        "y": -504
       },
       "type": "custom",
       "data": {
@@ -25,13 +25,13 @@
         "height": 119
       },
       "selected": false,
-      "dragging": false
+      "dragging": true
     },
     {
       "id": "sci-shipping",
       "position": {
-        "x": 355.76444660283886,
-        "y": 3.516480460486285
+        "x": 72,
+        "y": -360
       },
       "type": "custom",
       "data": {
@@ -48,20 +48,20 @@
         "category": "Data"
       },
       "measured": {
-        "width": 327,
-        "height": 166
+        "width": 336,
+        "height": 144
       },
       "selected": false,
-      "dragging": false,
-      "width": 327,
-      "height": 166,
+      "dragging": true,
+      "width": 336,
+      "height": 144,
       "resizing": false
     },
     {
       "id": "bi-market-volatility",
       "position": {
-        "x": 968.2457702582367,
-        "y": 172.7682152004629
+        "x": 456,
+        "y": -168
       },
       "type": "custom",
       "data": {
@@ -79,10 +79,10 @@
       },
       "measured": {
         "width": 300,
-        "height": 115
+        "height": 119
       },
       "selected": false,
-      "dragging": false
+      "dragging": true
     }
   ],
   "edges": []

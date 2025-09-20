@@ -1,4 +1,5 @@
-import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals } from '@xyflow/react';
+import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals, useReactFlow } from '@xyflow/react';
+import { roundToGrid } from '../constants/grid';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
@@ -21,6 +22,7 @@ export default function CustomNode(props: NodeProps) {
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const lastUnselectedWidth = useRef<number | null>(null);
   const lastUnselectedHeight = useRef<number | null>(null);
+  const rf = useReactFlow();
 
   // Track the node's width while unselected so we can lock to it on selection
   useLayoutEffect(() => {
@@ -70,6 +72,22 @@ export default function CustomNode(props: NodeProps) {
     }
   }, [selected, open, config, updateNodeInternals, props]);
 
+  // Snap node dimensions to GRID on resize end
+  useEffect(() => {
+    if (!selected) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const onMouseUp = () => {
+      const id = (props as any).id as string;
+      const w = roundToGrid(root.offsetWidth);
+      const h = roundToGrid(root.offsetHeight);
+      rf.setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, width: w, height: h } : n)));
+      updateNodeInternals(id);
+    };
+    window.addEventListener('mouseup', onMouseUp, { once: true });
+    return () => { window.removeEventListener('mouseup', onMouseUp); };
+  }, [selected, rf, updateNodeInternals, props]);
+
   const updateConfig = (key: keyof typeof config, value: any) => {
     data.onChange?.({ config: { ...config, [key]: value } });
     setErrors((prev) => ({ ...prev, [key]: '' })); // Clear error on change
@@ -111,7 +129,14 @@ export default function CustomNode(props: NodeProps) {
 
   return (
     <div ref={rootRef} className={`node-card ${selected ? 'selected' : ''} vertical-${String(data.vertical || '').toLowerCase()} ${isConnectivity ? 'node-connectivity' : ''}`}>
-      <NodeResizer isVisible={!!selected} minWidth={isConnectivity ? 160 : 300} minHeight={isConnectivity ? 110 : 200} lineStyle={{ stroke: '#3d4557' }} handleStyle={{ width: 8, height: 8, borderRadius: 2 }} />
+      <NodeResizer
+        isVisible={!!selected}
+        minWidth={isConnectivity ? 144 : 288}
+        minHeight={isConnectivity ? 96 : 192}
+        keepAspectRatio={false}
+        lineStyle={{ stroke: '#3d4557' }}
+        handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
+      />
 
       <div className="node-head" style={headStyle}>
         <div className="node-title">{isConnectivity ? String(data.subtype || '').toLowerCase() : data.label}</div>
