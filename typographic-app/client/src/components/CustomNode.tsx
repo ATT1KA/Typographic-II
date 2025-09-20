@@ -23,6 +23,21 @@ export default function CustomNode(props: NodeProps) {
   const lastUnselectedWidth = useRef<number | null>(null);
   const lastUnselectedHeight = useRef<number | null>(null);
   const rf = useReactFlow();
+  // compute which handles on this node are currently connected
+  const connectedHandles = useMemo(() => {
+    try {
+      const all = rf.getEdges() as any[];
+      const id = (props as any).id as string;
+      const set = new Set<string>();
+      for (const e of all) {
+        if (e.source === id && e.sourceHandle) set.add(e.sourceHandle);
+        if (e.target === id && e.targetHandle) set.add(e.targetHandle);
+      }
+      return set;
+    } catch {
+      return new Set<string>();
+    }
+  }, [rf, props]);
 
   // Track the node's width while unselected so we can lock to it on selection
   useLayoutEffect(() => {
@@ -257,10 +272,11 @@ export default function CustomNode(props: NodeProps) {
 
       {(() => {
         // Infer category for legacy nodes
-        const category: NodeCategory = (data.category ??
+        const category: NodeCategory = data.category ?? (
           (['Connectivity','Transformation','Output'] as const).includes(data.vertical as any)
             ? (data.vertical as NodeCategory)
-            : 'Data');
+            : 'Data'
+        );
 
         // Defaults per category
         const defaults =
@@ -300,13 +316,14 @@ export default function CustomNode(props: NodeProps) {
           const offset = 12 + i * 14;
           const color = p.kind === 'meta' ? '#e05555' : '#9a9a9a';
           const tooltip = `${p.kind === 'meta' ? 'Meta' : 'Data'} ${isIn ? 'In' : 'Out'}`;
+          const cls = `node-port node-port--${p.kind} node-port--${p.direction}` + (connectedHandles.has(p.id) ? ' connected' : '');
           return (
             <Handle
               key={p.id}
               id={p.id}
               type={isIn ? 'target' : 'source'}
               position={isIn ? Position.Left : Position.Right}
-              className={`node-port node-port--${p.kind} node-port--${p.direction}`}
+              className={cls}
               data-tooltip={tooltip}
               title={tooltip}
               aria-label={tooltip}

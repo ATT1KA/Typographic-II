@@ -1,8 +1,8 @@
-.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2); box-sizing: border-box; }
+.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.20), inset 0 -1px 3px rgba(0,0,0,0.48); box-sizing: border-box; }
 .node-connectivity { min-width: 160px; }
 .node-card.selected.node-connectivity { max-width: 100%; }
 .node-connectivity, .node-connectivity * { box-sizing: border-box; }
-.node-connectivity { max-width: 100%; overflow: hidden; }
+.node-connectivity { max-width: 100%; overflow: visible; }
 .node-connectivity .node-head { padding: 6px 10px; }
 .node-connectivity .node-title { font-size: 12px; font-weight: 700; text-transform: none; }
 .node-connectivity .node-body { padding: 8px; gap: 6px; min-width: 0; max-width: 100%; overflow-x: hidden; }
@@ -163,8 +163,8 @@
 }
 
 /* Port tooltips: uniform, professional, hover-only */
-.node-port { position: absolute; width: 10px; height: 10px; border-radius: 50%; display: block; }
-.node-port.react-flow__handle { width: 10px; height: 10px; }
+.node-port { position: absolute; width: 7px; height: 7px; border-radius: 50%; display: block; z-index: 1; transition: box-shadow 200ms ease, transform 160ms ease; }
+.node-port.react-flow__handle { width: 7px; height: 7px; }
 .node-port[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -191,8 +191,55 @@
 }
 
 /* Ensure left/right handles stay attached to the node edges with uniform spacing */
-.react-flow__handle-left.node-port { left: -5px !important; }
-.react-flow__handle-right.node-port { right: -5px !important; }
+.react-flow__handle-left.node-port { left: -4px !important; }
+.react-flow__handle-right.node-port { right: -4px !important; }
+
+/* Make handles appear half-hidden behind the node for a sleeker look */
+.node-card { position: relative; z-index: 2; }
+.node-port { transform: translateZ(0); }
+
+/* Connected handles get a faint 2px glow matching their kind */
+.node-port.connected { transform: scale(1.08); }
+/* Heartbeat-like pulse: quick double-beat then rest (non-linear feel) */
+@keyframes node-port-pulse {
+  /* small initial beat */
+  0%   { transform: translate(-50%, -50%) scale(0.90); opacity: 0.88; }
+  6%   { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+  12%  { transform: translate(-50%, -50%) scale(0.94); opacity: 0.92; }
+  /* second softer beat */
+  22%  { transform: translate(-50%, -50%) scale(1.08); opacity: 0.98; }
+  30%  { transform: translate(-50%, -50%) scale(0.96); opacity: 0.93; }
+  /* decay to resting subtle pulse */
+  60%  { transform: translate(-50%, -50%) scale(1.02); opacity: 0.95; }
+  100% { transform: translate(-50%, -50%) scale(0.90); opacity: 0.90; }
+}
+
+.node-port.connected::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.95;
+  transition: opacity 200ms ease, transform 160ms ease;
+}
+.node-port.connected.node-port--data::before {
+  background: radial-gradient(circle at 40% 35%, rgba(154,154,154,0.62) 0%, rgba(154,154,154,0.36) 22%, rgba(154,154,154,0.18) 44%, rgba(154,154,154,0.06) 72%, rgba(154,154,154,0) 100%);
+  /* simple pulse, 20% slower than base 1200ms → 1440ms */
+  animation: node-port-simple 1440ms ease-in-out infinite;
+}
+.node-port.connected.node-port--meta::before {
+  background: radial-gradient(circle at 40% 35%, rgba(224,85,85,0.62) 0%, rgba(235,95,74,0.44) 22%, rgba(245,110,82,0.28) 44%, rgba(235,95,74,0.08) 72%, rgba(224,85,85,0) 100%);
+  /* Heartbeat animation retained for meta ports */
+  animation: node-port-pulse 1560ms cubic-bezier(.25,.1,.25,1) infinite;
+}
+/* Ensure the actual port sits above the glow */
+.node-port { z-index: 2; }
 
 /* Prevent pseudo-elements from affecting layout or accidentally capturing events */
 .node-port::after { pointer-events: none; }

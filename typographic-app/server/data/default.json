@@ -3,7 +3,7 @@
     {
       "id": "fundraising-screening",
       "position": {
-        "x": -600,
+        "x": -744,
         "y": -744
       },
       "type": "custom",
@@ -33,7 +33,7 @@
       "id": "sci-shipping",
       "position": {
         "x": -408,
-        "y": -360
+        "y": -600
       },
       "type": "custom",
       "data": {
@@ -62,8 +62,8 @@
     {
       "id": "bi-market-volatility",
       "position": {
-        "x": -24,
-        "y": -648
+        "x": 264,
+        "y": -696
       },
       "type": "custom",
       "data": {
@@ -89,8 +89,8 @@
     {
       "id": "connectivity-causal-router-1758355003726",
       "position": {
-        "x": -264,
-        "y": -696
+        "x": 24,
+        "y": -552
       },
       "type": "custom",
       "data": {
@@ -109,12 +109,158 @@
         }
       },
       "measured": {
-        "width": 160,
-        "height": 74
+        "width": 144,
+        "height": 96
       },
       "selected": false,
-      "dragging": true
+      "dragging": true,
+      "width": 144,
+      "height": 96,
+      "resizing": false
+    },
+    {
+      "id": "connectivity-correlation-router-1758356131568",
+      "position": {
+        "x": -264,
+        "y": -792
+      },
+      "type": "custom",
+      "data": {
+        "label": "Correlation Router",
+        "vertical": "Connectivity",
+        "subtype": "Correlation Router",
+        "category": "Connectivity",
+        "config": {
+          "logic": {
+            "type": "router",
+            "params": {
+              "strategy": "correlation",
+              "metric": "pearson",
+              "min": 0.5
+            }
+          }
+        }
+      },
+      "measured": {
+        "width": 144,
+        "height": 96
+      },
+      "selected": false,
+      "dragging": true,
+      "width": 144,
+      "height": 96
     }
   ],
-  "edges": []
+  "edges": [
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "fundraising-screening",
+      "sourceHandle": "data-out",
+      "target": "sci-shipping",
+      "targetHandle": "data-in",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__fundraising-screeningdata-out-sci-shippingdata-in"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "connectivity-correlation-router-1758356131568",
+      "sourceHandle": "data-out",
+      "target": "bi-market-volatility",
+      "targetHandle": "data-in",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__connectivity-correlation-router-1758356131568data-out-bi-market-volatilitydata-in"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "fundraising-screening",
+      "sourceHandle": "data-out",
+      "target": "connectivity-correlation-router-1758356131568",
+      "targetHandle": "data-in-a",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__fundraising-screeningdata-out-connectivity-correlation-router-1758356131568data-in-a"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "sci-shipping",
+      "sourceHandle": "data-out",
+      "target": "connectivity-causal-router-1758355003726",
+      "targetHandle": "data-in-a",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__sci-shippingdata-out-connectivity-causal-router-1758355003726data-in-a"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "connectivity-causal-router-1758355003726",
+      "sourceHandle": "data-out",
+      "target": "bi-market-volatility",
+      "targetHandle": "data-in",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__connectivity-causal-router-1758355003726data-out-bi-market-volatilitydata-in"
+    }
+  ]
 }

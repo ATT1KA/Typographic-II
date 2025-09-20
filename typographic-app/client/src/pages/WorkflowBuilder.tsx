@@ -95,9 +95,9 @@ const seedNodes: Node<NodeData>[] = [
 ];
 
 const seedEdges: Edge[] = [
-  { id: 'e-policy-fundraising', source: 'policy-implementation', target: 'fundraising-screening', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } },
-  { id: 'e-fundraising-sci', source: 'fundraising-screening', target: 'sci-shipping', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } },
-  { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2 } }
+  { id: 'e-policy-fundraising', source: 'policy-implementation', target: 'fundraising-screening', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } },
+  { id: 'e-fundraising-sci', source: 'fundraising-screening', target: 'sci-shipping', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } },
+  { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } }
 ];
 
 function WorkflowCanvas({
@@ -194,7 +194,7 @@ function WorkflowCanvas({
       defaultEdgeOptions={defaultEdgeOptions}
       nodeOrigin={[0, 0]}
       onNodeDragStop={onNodeDragStop}
-      connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2 }}
+      connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeLinecap: 'round' as any }}
       fitView={false}
     >
       <MiniMap
@@ -248,7 +248,9 @@ export default function WorkflowBuilder() {
   const parseKind = useCallback((handleId?: string | null): PortKind =>
     (handleId && handleId.toLowerCase().includes('meta')) ? 'meta' : 'data', []);
   const edgeStyleFor = useCallback((k: PortKind) =>
-    k === 'meta' ? { stroke: '#e05555', strokeWidth: 2 } : { stroke: '#9a9a9a', strokeWidth: 2 }, []);
+    k === 'meta'
+      ? { stroke: '#e05555', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+      : { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }, []);
   const isFeedbackNode = useCallback((n?: Node<NodeData>) =>
     !!n && ((n.data?.vertical === 'Connectivity' && /feedback/i.test(String(n.data?.subtype))) ||
             /feedback/i.test(String(n.data?.label))), []);
@@ -435,9 +437,9 @@ export default function WorkflowBuilder() {
   }, [sidebarOpen]);
 
   const defaultEdgeOptions = useMemo(() => ({
-    type: 'smoothstep' as const,
+    type: 'bezier' as const,
     animated: true,
-    style: { stroke: '#9a9a9a', strokeWidth: 2 },
+    style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const },
     markerEnd: { type: 'arrowclosed' as const, color: '#9a9a9a' }
   }), []);
 
@@ -468,15 +470,27 @@ export default function WorkflowBuilder() {
       id,
   position: { x: roundToGridOffset(120 + Math.round(Math.random() * 80)), y: roundToGridOffset(120 + Math.round(Math.random() * 80)) },
       type: 'custom',
-      data: {
-        label: item.category === 'Connectivity' ? String(item.subtype) : `${item.vertical}: ${item.subtype}`,
-        vertical: item.vertical as NodeData['vertical'],
-        subtype: item.subtype,
-            category: item.category ?? 'Data',
-            config: (item.category === 'Connectivity')
-              ? { logic: (item as any).sampleConfig ?? {} }
-              : ((item as any).sampleConfig ?? {})
-      }
+      data: (() => {
+        const isConn = (item.category ?? item.vertical) === 'Connectivity';
+        const base: any = {
+          label: isConn ? String(item.subtype) : `${item.vertical}: ${item.subtype}`,
+          vertical: item.vertical as NodeData['vertical'],
+          subtype: item.subtype,
+          category: isConn ? 'Connectivity' : (item.category ?? 'Data'),
+          config: isConn ? { logic: (item as any).sampleConfig ?? {} } : ((item as any).sampleConfig ?? {})
+        };
+        if (isConn) {
+          // Explicit default ports for connectivity nodes so handles render reliably
+          base.ports = [
+            { id: 'data-in-a', direction: 'in', kind: 'data' },
+            { id: 'data-in-b', direction: 'in', kind: 'data' },
+            { id: 'data-out', direction: 'out', kind: 'data' },
+            { id: 'meta-in', direction: 'in', kind: 'meta' },
+            { id: 'meta-out', direction: 'out', kind: 'meta' },
+          ];
+        }
+        return base;
+      })()
     };
     unstable_batchedUpdates(() => {
       setNodes((curr) => curr.concat(attachCallbacks([newNode])));
