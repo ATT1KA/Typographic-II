@@ -497,3 +497,53 @@
 
 /* Slightly larger handle hit-area (ported for visibility) */
 .react-flow__handle { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Output node header: British Racing Green and pulsing white gradient glow */
+.node.output {
+  position: relative;
+  z-index: 0;
+}
+
+.node.output .node-header,
+.node.output .header,
+.node.output .title {
+  color: #0B6623; /* British Racing Green */
+}
+
+/* Outer glow using pseudo-element with radial-gradient and heartbeat pulse */
+.node.output::before {
+  content: '';
+  position: absolute;
+  inset: -8px; /* extend beyond the node to allow glow */
+  border-radius: 10px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0) 72%);
+  box-shadow: 0 0 0 0 rgba(255,255,255,0.15);
+  filter: blur(6px);
+  opacity: 1;
+  animation: heartbeat-glow 3s ease-in-out infinite;
+}
+
+@keyframes heartbeat-glow {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.18);
+  }
+  28% {
+    transform: scale(1.03);
+    opacity: 1;
+    box-shadow: 0 0 20px 4px rgba(255,255,255,0.20);
+  }
+  58% {
+    transform: scale(1.015);
+    opacity: 0.95;
+    box-shadow: 0 0 10px 2px rgba(255,255,255,0.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.0);
+  }
+}

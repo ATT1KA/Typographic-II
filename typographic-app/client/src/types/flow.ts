@@ -48,5 +48,5 @@ export const verticalColors: Record<Vertical, string> = {
   SCI: '#fdcb6e',         // amber
   Connectivity: '#8ab4ff',
   Transformation: '#ffb86c',
-  Output: '#88d498'
+  Output: '#0B6623'
 };
