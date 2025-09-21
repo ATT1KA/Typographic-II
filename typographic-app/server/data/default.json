@@ -123,7 +123,7 @@
     {
       "id": "connectivity-correlation-router-1758356131568",
       "position": {
-        "x": -312,
+        "x": -264,
         "y": -840
       },
       "type": "custom",
@@ -205,7 +205,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 120
+        "height": 115
       },
       "selected": false,
       "dragging": true
@@ -229,7 +229,7 @@
       },
       "measured": {
         "width": 300,
-        "height": 120
+        "height": 115
       },
       "selected": false,
       "dragging": true
