@@ -1,6 +1,14 @@
-import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals, useReactFlow } from '@xyflow/react';
+// Minimal local stubs to replace @xyflow/react until a native port is implemented
+export const Handle = (props: any) => <div {...props} />;
+export const Position = { Left: 'left', Right: 'right', Top: 'top', Bottom: 'bottom' } as const;
+export type NodeProps = any;
+export const NodeResizer = (props: any) => <div style={{ display: props.isVisible ? 'block' : 'none' }} />;
+export const useUpdateNodeInternals = () => { return (/*id?: string*/ _id?: string) => {}; };
+export const useReactFlow = () => ({ getEdges: () => [] as any[], setNodes: (fn: any) => {} });
 import { roundToGrid } from '../constants/grid';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'inferno';
+import Inferno from 'inferno';
+type CSSProperties = any;
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
 

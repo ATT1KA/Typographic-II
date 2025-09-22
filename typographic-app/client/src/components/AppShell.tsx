@@ -1,10 +1,18 @@
-import { type ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import Inferno from 'inferno';
+// Small Link replacement for react-router NavLink
+function Link({ to, children }: { to: string; children?: any }) {
+  const onClick = (e: MouseEvent) => {
+    e.preventDefault();
+    try { window.history.pushState({}, '', to); window.dispatchEvent(new PopStateEvent('popstate')); } catch {}
+  };
+  const isActive = typeof window !== 'undefined' && window.location && window.location.pathname === to;
+  return <a href={to} className={isActive ? 'active' : ''} onClick={onClick as any}>{children}</a>;
+}
 import { Settings, SquareGanttChart } from 'lucide-react';
 import HealthStatus from './HealthStatus';
 import '../styles/theme.css';
 
-export default function AppShell({ children }: { children: ReactNode }) {
+export default function AppShell({ children }: { children?: any }) {
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -13,10 +21,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span className="brand-title">TYPOGRAPHIC</span>
         </div>
         <nav className="app-nav">
-          <NavLink to="/explorer" className={({ isActive }) => isActive ? 'active' : ''}>Explorer</NavLink>
-          <NavLink to="/workflow" className={({ isActive }) => isActive ? 'active' : ''}>Workflow</NavLink>
-          <NavLink to="/dashboards" className={({ isActive }) => isActive ? 'active' : ''}>Dashboards</NavLink>
-          <NavLink to="/reports" className={({ isActive }) => isActive ? 'active' : ''}>Reports</NavLink>
+          <Link to="/explorer">Explorer</Link>
+          <Link to="/workflow">Workflow</Link>
+          <Link to="/dashboards">Dashboards</Link>
+          <Link to="/reports">Reports</Link>
         </nav>
         <div className="header-actions">
           <HealthStatus />

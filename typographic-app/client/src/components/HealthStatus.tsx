@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
-
-type Health = { ok: boolean; label: string };
+import { useEffect, useState } from 'inferno';
+import Inferno from 'inferno';
 
 export default function HealthStatus() {
-  const [api, setApi] = useState<Health>({ ok: false, label: 'API' });
-  const [flow, setFlow] = useState<Health>({ ok: false, label: 'Flow' });
+  const [api, setApi] = useState({ ok: false, label: 'API' });
+  const [flow, setFlow] = useState({ ok: false, label: 'Flow' });
 
   useEffect(() => {
     let cancel = false;

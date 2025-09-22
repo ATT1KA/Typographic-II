@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'inferno';
+import Inferno from 'inferno';
 
 export default function Explorer() {
   const [q, setQ] = useState('');

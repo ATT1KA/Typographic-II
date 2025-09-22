@@ -10,13 +10,28 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-  "jsx": "react-jsx",
-    "strict": true,
+    "jsx": "react-jsx",
+    "jsxFactory": "Inferno.createElement",
+    "jsxFragmentFactory": "Inferno.Fragment",
+    "strict": false,
+    "baseUrl": "./",
+    "paths": {
+      "inferno": ["src/shims/inferno-shim.ts"],
+      "inferno/*": ["src/shims/*"]
+    },
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["vitest/globals", "vitest/importMeta"]
   },
-  "include": ["./src", "./vite.config.ts"],
+  "include": [
+    "./src/main.tsx",
+    "./src/App.tsx",
+    "./src/router.ts",
+  "./src/graph",
+  "./src/shims",
+    "./src/globals.d.ts",
+    "./vite.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

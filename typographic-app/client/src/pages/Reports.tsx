@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState } from 'inferno';
+import Inferno from 'inferno';
 
 export default function Reports() {
   const [title, setTitle] = useState('Executive Brief');

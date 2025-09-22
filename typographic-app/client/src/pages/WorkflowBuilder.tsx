@@ -1,29 +1,20 @@
-import { ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
-import { unstable_batchedUpdates } from 'react-dom';
-import {
-  Background,
-  Controls,
-  addEdge,
-  Connection,
-  Edge,
-  MiniMap,
-  useEdgesState,
-  useNodesState,
-  type Node,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'inferno';
+import GraphView from '../graph/GraphView';
 import CustomNode from '../components/CustomNode';
-import { type LibraryItem as BaseItem } from '../components/NodeLibrary';
-const NodeLibrary = lazy(() => import('../components/NodeLibrary'));
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
+
+// Lightweight local stubs for types and helpers until full Flow port is implemented
+type Node<T = any> = { id: string; position: { x: number; y: number }; data?: T; selected?: boolean; width?: number; height?: number };
+type Edge = { id?: string; source: string; target: string; data?: any; animated?: boolean };
+type BaseItem = { vertical: string; label: string; subtype: string; sampleConfig?: any };
+const unstable_batchedUpdates = (fn: Function) => fn();
+const addEdge = (edge: any, current: any[] = []) => (current || []).concat(edge);
+const toast = { success: (..._a: any[]) { /* noop */ }, error: (..._a: any[]) { /* noop */ } };
 import { GRID_SIZE, roundToGrid, roundToGridOffset, GRID_OFFSET } from '../constants/grid';
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? '/api';
 
-const seedNodes: Node<NodeData>[] = [
+const seedNodes: any[] = [
   {
     id: 'policy-implementation',
     position: { x: 80, y: 120 },
@@ -94,130 +85,31 @@ const seedNodes: Node<NodeData>[] = [
   }
 ];
 
-const seedEdges: Edge[] = [
+const seedEdges: any[] = [
   { id: 'e-policy-fundraising', source: 'policy-implementation', target: 'fundraising-screening', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } },
   { id: 'e-fundraising-sci', source: 'fundraising-screening', target: 'sci-shipping', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } },
   { id: 'e-sci-bi', source: 'sci-shipping', target: 'bi-market-volatility', animated: true, data: { kind: 'data' }, style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const } }
 ];
 
-function WorkflowCanvas({
-  nodes,
-  edges,
-  nodeTypes,
-  onNodesChange,
-  onEdgesChange,
-  onConnect,
-  defaultEdgeOptions,
-  sidebarOpen,
-}: {
-  nodes: Node<NodeData>[];
-  edges: Edge[];
-  nodeTypes: any;
-  onNodesChange: any;
-  onEdgesChange: any;
-  onConnect: any;
-  defaultEdgeOptions: any;
-  sidebarOpen: boolean;
-}) {
-  const rf = useReactFlow();
-  const wrapperRef = useRef<HTMLElement | null>(null);
-  const minimapRef = useRef<HTMLElement | null>(null);
-
-  // Simple throttle function
-  const throttle = (func: Function, limit: number) => {
-    let inThrottle: boolean;
-    return function(this: any, ...args: any[]) {
-      if (!inThrottle) {
-        func.apply(this, args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    };
-  };
-
-  // fit view on sidebar toggle
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try { rf.fitView({ padding: 0.2 }); } catch {}
-    }, 50);
-    return () => clearTimeout(t);
-  }, [sidebarOpen, rf]);
-
-  // position the controls wrapper to the left of the minimap with an 8px gap
-  useEffect(() => {
-  const gap = 1;
-    wrapperRef.current = document.querySelector('.reactflow-controls-left-of-minimap') as HTMLElement | null;
-    minimapRef.current = document.querySelector('.react-flow__minimap') as HTMLElement | null;
-    function position() {
-      const wrapper = wrapperRef.current;
-      const minimap = minimapRef.current;
-      if (!wrapper || !minimap) return;
-      const mmRect = minimap.getBoundingClientRect();
-      // position wrapper left of minimap, vertically centered
-      const left = Math.max(8, mmRect.left - gap - wrapper.offsetWidth);
-      const desiredTop = mmRect.top + (mmRect.height / 2) - (wrapper.offsetHeight / 2);
-      const minTop = mmRect.top;
-      const maxTop = mmRect.bottom - wrapper.offsetHeight;
-      const clampedTop = Math.max(minTop, Math.min(desiredTop, maxTop));
-      wrapper.style.left = `${left}px`;
-      wrapper.style.top = `${clampedTop}px`;
-    }
-    const throttledPosition = throttle(position, 200);
-    throttledPosition();
-    const ro = new ResizeObserver(throttledPosition);
-    try { if (minimapRef.current) ro.observe(minimapRef.current); } catch {}
-    window.addEventListener('resize', throttledPosition);
-    // also reposition on scroll so the wrapper stays vertically centered relative to viewport minimap
-    window.addEventListener('scroll', throttledPosition, { passive: true });
-    return () => {
-      window.removeEventListener('resize', throttledPosition);
-      window.removeEventListener('scroll', throttledPosition);
-      try { ro.disconnect(); } catch {}
-    };
-  }, [sidebarOpen]);
-
-  const onNodeDragStop = useCallback((_e: any, n: Node<NodeData>) => {
-    const snapped = { x: roundToGridOffset(n.position.x, GRID_SIZE, GRID_OFFSET), y: roundToGridOffset(n.position.y, GRID_SIZE, GRID_OFFSET) };
-    if (snapped.x !== n.position.x || snapped.y !== n.position.y) {
-      rf.setNodes((nds) => nds.map((m) => (m.id === n.id ? { ...m, position: snapped } : m)));
-    }
-  }, [rf]);
-
+// React Flow-specific canvas removed for Inferno port. Use simple GraphView.
+function WorkflowCanvas({ nodes, edges }: { nodes: any[]; edges: any[] }) {
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      defaultEdgeOptions={defaultEdgeOptions}
-      nodeOrigin={[0, 0]}
-      onNodeDragStop={onNodeDragStop}
-      connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeLinecap: 'round' as any }}
-      fitView={false}
-    >
-      <MiniMap
-        nodeColor={useCallback((n: Node) => {
-          const v = (n as any)?.data?.vertical as keyof typeof verticalColors | undefined;
-          return (v && verticalColors[v]) || '#5a5a5a';
-        }, [])}
-        nodeStrokeColor="#0a0a0a"
-        maskColor="rgba(0,0,0,0.55)"
-        pannable
-        zoomable
-      />
-      <div className="reactflow-controls-left-of-minimap">
-        <Controls />
-      </div>
-  <Background gap={GRID_SIZE} size={2} color="#303030" />
-    </ReactFlow>
+    <GraphView nodes={nodes} edges={edges} />
   );
 }
 
 export default function WorkflowBuilder() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(seedEdges);
+  // Temporary simple state replacements for React Flow hooks
+  const [nodes, setNodes] = useState<any[]>([]);
+  const onNodesChange = useCallback((cbOrNodes: any) => {
+    if (typeof cbOrNodes === 'function') setNodes((curr) => (cbOrNodes(curr) ?? curr));
+    else setNodes(cbOrNodes || []);
+  }, []);
+  const [edges, setEdges] = useState<any[]>(seedEdges);
+  const onEdgesChange = useCallback((cbOrEdges: any) => {
+    if (typeof cbOrEdges === 'function') setEdges((curr) => (cbOrEdges(curr) ?? curr));
+    else setEdges(cbOrEdges || []);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [workflowId, setWorkflowId] = useState('default');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
@@ -230,14 +122,14 @@ export default function WorkflowBuilder() {
 
   const apiUrl = `${API_BASE}/flow/${workflowId}`;
 
-  const attachCallbacks = useCallback((nds: Node<NodeData>[]) => {
+  const attachCallbacks = useCallback((nds: any[]) => {
     return nds.map((n) => ({
       ...n,
       type: 'custom',
       data: {
         ...n.data,
         onChange: (partial: Partial<NodeData>) => {
-          setNodes((curr) => curr.map((m) => (m.id === n.id ? { ...m, data: { ...(m.data as NodeData), ...partial } } : m)));
+          setNodes((curr: any[]) => curr.map((m) => (m.id === n.id ? { ...m, data: { ...(m.data as any), ...partial } } : m)));
         }
       }
     }));
@@ -251,10 +143,10 @@ export default function WorkflowBuilder() {
     k === 'meta'
       ? { stroke: '#e05555', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
       : { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }, []);
-  const isFeedbackNode = useCallback((n?: Node<NodeData>) =>
+  const isFeedbackNode = useCallback((n?: any) =>
     !!n && ((n.data?.vertical === 'Connectivity' && /feedback/i.test(String(n.data?.subtype))) ||
             /feedback/i.test(String(n.data?.label))), []);
-  const wouldCreateCycle = useCallback((allEdges: Edge[], trySource: string, tryTarget: string) => {
+  const wouldCreateCycle = useCallback((allEdges: any[], trySource: string, tryTarget: string) => {
     const adj = new Map<string, string[]>();
     for (const e of allEdges) {
       const list = adj.get(e.source) || [];
@@ -280,9 +172,9 @@ export default function WorkflowBuilder() {
         const res = await fetch(apiUrl);
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data.nodes) && data.nodes.length) {
+      if (Array.isArray(data.nodes) && data.nodes.length) {
             // migrate legacy data (ensure Connectivity is logic-only)
-            const migratedNodes: Node<NodeData>[] = (data.nodes as Node<NodeData>[]).map((n) => {
+            const migratedNodes: any[] = (data.nodes as any[]).map((n) => {
               const cat = ((n.data as any)?.category ?? (['Connectivity','Transformation','Output'].includes(String((n.data as any)?.vertical)) ? (n.data as any).vertical : 'Data')) as NodeCategory;
               const cfg = { ...((n.data as any)?.config || {}) } as any;
               if (cat === 'Connectivity') {
@@ -294,7 +186,7 @@ export default function WorkflowBuilder() {
                 data: { ...(n.data || {}), category: cat, config: cfg }
               } as Node<NodeData>;
             });
-            const migratedEdges: Edge[] = (Array.isArray(data.edges) ? data.edges : []).map((e: any) => ({
+            const migratedEdges: any[] = (Array.isArray(data.edges) ? data.edges : []).map((e: any) => ({
               ...e,
               data: { ...(e.data || {}), kind: (e.data && e.data.kind) || 'data' },
               style: e.style || edgeStyleFor((e.data && e.data.kind) || 'data')
@@ -307,7 +199,7 @@ export default function WorkflowBuilder() {
               height: n.height ? roundToGrid(n.height) : n.height,
             }));
             setNodes(attachCallbacks(snapped));
-            setEdges(migratedEdges);
+            setEdges(migratedEdges || []);
             initialLoadedRef.current = true;
             return;
           }
@@ -318,8 +210,8 @@ export default function WorkflowBuilder() {
         ...n,
         position: { x: roundToGridOffset(n.position.x), y: roundToGridOffset(n.position.y) }
       })));
-      setNodes(seededNodes);
-      setEdges(seedEdges);
+  setNodes(seededNodes);
+  setEdges(seedEdges || []);
       try {
         await fetch(apiUrl, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -331,7 +223,7 @@ export default function WorkflowBuilder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowId, attachCallbacks, setNodes, setEdges]);
 
-  const sanitizeNodes = useCallback((nds: Node<NodeData>[]) => nds.map((n) => {
+  const sanitizeNodes = useCallback((nds: any[]) => nds.map((n) => {
     const d = { ...(n.data || {}) } as any;
     if (d.onChange) delete d.onChange;
     const cat = (d.category ?? (['Connectivity','Transformation','Output'].includes(String(d.vertical)) ? d.vertical : 'Data'));
@@ -355,9 +247,9 @@ export default function WorkflowBuilder() {
         const err = await res.json();
         throw new Error(err.error || 'Save failed');
       }
-      if (!opts?.silent) { toast.success('Saved', { icon: false }); }
+      if (!opts?.silent) { console.log('Saved'); }
     } catch (e) {
-      toast.error(`Save failed: ${String(e)}`);
+      console.error(`Save failed: ${String(e)}`);
     } finally {
       setSaving(false);
     }
@@ -392,19 +284,19 @@ export default function WorkflowBuilder() {
         height: n.height ? roundToGrid(n.height) : n.height,
       }));
       setNodes(attachCallbacks(snapped));
-      setEdges(migratedEdges);
+      setEdges(migratedEdges || []);
     } catch (e) {
-      toast.error(`Load failed: ${String(e)}`);
+      console.error(`Load failed: ${String(e)}`);
     }
   }, [apiUrl, attachCallbacks, setNodes, setEdges]);
 
-  const onConnect = useCallback((connection: Connection) => {
+  const onConnect = useCallback((connection: any) => {
     const { source, target, sourceHandle, targetHandle } = connection;
     if (!source || !target) return;
     const kindS = parseKind(sourceHandle);
     const kindT = parseKind(targetHandle);
     if (kindS !== kindT) {
-      toast.error('Port kinds must match (data↔data, meta↔meta).', { icon: false });
+      console.error('Port kinds must match (data↔data, meta↔meta).');
       return;
     }
     const allowCycle =
@@ -415,13 +307,11 @@ export default function WorkflowBuilder() {
       return;
     }
     const kind: PortKind = kindS;
-    setEdges((eds) => addEdge({
-      ...connection,
-      animated: true,
-      data: { ...(connection as any).data, kind },
-      style: edgeStyleFor(kind),
-      markerEnd: { type: 'arrowclosed', color: kind === 'meta' ? '#e05555' : '#9a9a9a' }
-    }, eds));
+    // simple addEdge behaviour
+    setEdges((eds) => {
+      const next = (eds || []).concat([{ ...connection, animated: true, data: { ...(connection as any).data, kind }, style: edgeStyleFor(kind) }]);
+      return next;
+    });
   }, [edges, nodes, setEdges]);
 
   // autosave a short time after nodes/edges change, only after initial load (silent)
@@ -559,29 +449,9 @@ export default function WorkflowBuilder() {
   }, [duplicateSelected, deleteSelected]);
 
   return (
-  <div style={{ height: '100%', minHeight: 500, position: 'relative', background: '#000' }}>
-    <ToastContainer
-      position="bottom-right"
-      autoClose={1600}
-      hideProgressBar
-      closeButton={false}
-      toastClassName="toast-acrylic toast-compact"
-      className="toast-container-flow"
-    />
-      <Suspense fallback={<div>Loading...</div>}>
-      <NodeLibrary
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen((v) => !v)}
-        onAdd={addFromLibrary}
-        category={libraryCategory}
-        onCategoryChange={setLibraryCategory}
-        connectivityItems={connectivityItems}
-        transformationItems={transformationItems}
-        outputItems={outputItems}
-      />
-      </Suspense>
-  <div style={{ position: 'relative', height: '100%' }}>
-  <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div style={{ height: '100%', 'min-height': 500, position: 'relative', background: '#000' }}>
+      <div style={{ position: 'relative', height: '100%' }}>
+      <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>
           Workflow ID:
           <input
@@ -599,18 +469,16 @@ export default function WorkflowBuilder() {
           <button className="icon-btn" title="Delete (Del/Backspace)" onClick={deleteSelected}>Delete</button>
         </div>
       )}
-      <ReactFlowProvider>
-        <WorkflowCanvas
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          defaultEdgeOptions={defaultEdgeOptions}
-          sidebarOpen={sidebarOpen}
-        />
-      </ReactFlowProvider>
+      <GraphView
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        defaultEdgeOptions={defaultEdgeOptions}
+        sidebarOpen={sidebarOpen}
+      />
       </div>
     </div>
   );
