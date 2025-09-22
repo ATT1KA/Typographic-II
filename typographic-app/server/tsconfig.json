@@ -8,6 +8,9 @@
     "skipLibCheck": true,
     "strict": true,
     "outDir": "./dist",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "rootDir": "./src",
     "resolveJsonModule": true
   },

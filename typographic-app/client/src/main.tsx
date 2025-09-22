@@ -1,42 +1,33 @@
-import { render } from 'inferno';
-import { lazy, Suspense } from 'react'; // Keep for now; remove later if needed
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+// no explicit React import required under automatic runtime
 import ErrorBoundary from './components/ErrorBoundary';
-import AppShell from './components/AppShell';
+import App from './App';
 import './styles/theme.css';
 import './styles/global.css';
 
-const Explorer = lazy(() => import('./pages/Explorer'));
-const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'));
-const DashboardBuilder = lazy(() => import('./pages/DashboardBuilder'));
-const Reports = lazy(() => import('./pages/Reports'));
-const Onboarding = lazy(() => import('./pages/Onboarding'));
+// Decide at runtime whether we're in Inferno compat (classic) or standard React 18
+const isInfernoCompat = import.meta.env.VITE_INFERNO_COMPAT === '1';
 
-function App() {
-  return (
-    <BrowserRouter>
-      <AppShell>
-        <Suspense fallback={<div>Loading...</div>}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/workflow" replace />} />
-            <Route path="/explorer" element={<Explorer />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/workflow" element={<WorkflowBuilder />} />
-            <Route path="/dashboards" element={<DashboardBuilder />} />
-            <Route path="/reports" element={<Reports />} />
-          </Routes>
-        </Suspense>
-      </AppShell>
-    </BrowserRouter>
-  );
+// App component is now in a separate file for tests
+
+async function mountApp() {
+  const rootEl = document.getElementById('root')!;
+  if (isInfernoCompat) {
+    const ReactDOMClassic = await import('react-dom');
+    // @ts-expect-error typings are for React18; compat provides render()
+    ReactDOMClassic.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>,
+      rootEl
+    );
+  } else {
+    const ReactDOMClient = await import('react-dom/client');
+    ReactDOMClient.createRoot(rootEl).render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
+  }
 }
 
-export default App;
-
-const root = document.getElementById('root')!;
-render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>,
-  root
-);
+void mountApp();

@@ -1,22 +1,27 @@
-export class TypographyController {
+import { Request, Response, NextFunction } from 'express';
+import { TypographyService } from '../services/typography.service';
+
+export default class TypographyController {
     private typographyService: TypographyService;
 
     constructor() {
         this.typographyService = new TypographyService();
     }
 
-    public async getTypography(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async getTypography(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const typographyData = await this.typographyService.fetchTypographyData();
+            const typographyData = this.typographyService.getAllTypography();
             res.status(200).json(typographyData);
         } catch (error) {
             next(error);
         }
     }
 
-    public async updateTypography(req: Request, res: Response, next: NextFunction): Promise<void> {
+    public async updateTypography(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const updatedData = await this.typographyService.updateTypographyData(req.body);
+            const { id, ...payload } = req.body || {};
+            const updatedData = this.typographyService.updateTypography(id, payload);
+            if (!updatedData) return res.status(404).json({ message: 'Not found' });
             res.status(200).json(updatedData);
         } catch (error) {
             next(error);

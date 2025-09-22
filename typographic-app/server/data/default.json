@@ -4,7 +4,7 @@
       "id": "fundraising-screening",
       "position": {
         "x": -744,
-        "y": -888
+        "y": -936
       },
       "type": "custom",
       "data": {
@@ -24,7 +24,7 @@
         "width": 288,
         "height": 528
       },
-      "selected": false,
+      "selected": true,
       "dragging": true,
       "width": 288,
       "height": 528
