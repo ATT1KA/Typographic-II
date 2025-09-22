@@ -1,6 +1,6 @@
-import { Component, type ReactNode } from 'react';
+import { Component } from 'inferno';
 
-type Props = { children: ReactNode };
+type Props = { children?: any };
 type State = { hasError: boolean; message?: string };
 
 export default class ErrorBoundary extends Component<Props, State> {
