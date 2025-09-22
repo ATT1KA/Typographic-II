@@ -1,6 +1,7 @@
 import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals, useReactFlow } from '@xyflow/react';
 import { roundToGrid } from '../constants/grid';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { linkEvent } from 'inferno';
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
 
@@ -161,7 +162,7 @@ export default function CustomNode(props: NodeProps) {
       </div>
 
   <div ref={bodyRef} className="node-body" onKeyDownCapture={(e) => e.stopPropagation()}>
-        <button className="node-toggle" onClick={() => setOpen((v) => !v)}>
+        <button className="node-toggle" onClick={linkEvent(() => setOpen((v) => !v), null)}>
           {open ? 'Hide config' : 'Edit config'}
         </button>
         {open && (
@@ -172,7 +173,7 @@ export default function CustomNode(props: NodeProps) {
                   Logic Type
                   <select
                     value={(config.logic?.type as string) || 'router'}
-                    onChange={(e) => updateConfig('logic', { ...(config.logic || {}), type: e.target.value })}
+                    onChange={linkEvent((e) => updateConfig('logic', { ...(config.logic || {}), type: e.target.value }), null)}
                   >
                     <option value="router">Router</option>
                     <option value="join">Join</option>
@@ -185,7 +186,7 @@ export default function CustomNode(props: NodeProps) {
                   Parameters (JSON)
                   <textarea
                     value={JSON.stringify(config.logic?.params || {}, null, 2)}
-                    onChange={(e) => {
+                    onChange={linkEvent((e) => {
                       try {
                         const v = JSON.parse(e.target.value || '{}');
                         updateConfig('logic', { ...(config.logic || {}), params: v });
@@ -193,7 +194,7 @@ export default function CustomNode(props: NodeProps) {
                       } catch {
                         setErrors((prev) => ({ ...prev, logic: 'Invalid JSON' }));
                       }
-                    }}
+                    }, null)}
                     style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }}
                   />
                 </label>
@@ -206,7 +207,7 @@ export default function CustomNode(props: NodeProps) {
               <>
                 <label style={{ fontSize: 12 }}>
                   Data Source Type
-                  <select value={ds.type || 'api'} onChange={(e) => updateConfig('dataSource', { ...ds, type: e.target.value })}>
+                  <select value={ds.type || 'api'} onChange={linkEvent((e) => updateConfig('dataSource', { ...ds, type: e.target.value }), null)}>
                     <option value="api">API</option>
                     <option value="db">Database</option>
                     <option value="file">File</option>
@@ -218,21 +219,21 @@ export default function CustomNode(props: NodeProps) {
                     type="text"
                     value={ds.endpoint || ''}
                     placeholder="https://api.example.com/endpoint"
-                    onChange={(e) => validateAndUpdate('endpoint', e.target.value, validateUrl)}
+                    onChange={linkEvent((e) => validateAndUpdate('endpoint', e.target.value, validateUrl), null)}
                   />
                 </label>
                 <label style={{ fontSize: 12 }}>
                   Notes
                   <textarea
                     value={ds.notes || ''}
-                    onChange={(e) => validateAndUpdate('notes', e.target.value)}
+                    onChange={linkEvent((e) => validateAndUpdate('notes', e.target.value), null)}
                   />
                 </label>
                 <div>
                   <label style={{ fontSize: 12 }}>Transforms</label>
                   {transforms.map((t: any, idx: number) => (
                     <div key={idx} style={{ marginBottom: 8, padding: 8, border: '1px solid var(--control-border)', borderRadius: 8, background: 'var(--control-bg)' }}>
-                      <select value={t.type} onChange={(e) => updateTransform(idx, { type: e.target.value })}>
+                      <select value={t.type} onChange={linkEvent((e) => updateTransform(idx, { type: e.target.value }), null)}>
                         <option value="aggregation">Aggregation</option>
                         <option value="anomaly-detection">Anomaly Detection</option>
                         <option value="lm-studio-summary">LM Studio Summary</option>
@@ -242,26 +243,26 @@ export default function CustomNode(props: NodeProps) {
                           <input
                             placeholder="LM Endpoint"
                             value={t.params?.endpoint || ''}
-                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } })}
+                            onChange={linkEvent((e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } }), null)}
                           />
                           <textarea
                             placeholder="Prompt"
                             value={t.params?.prompt || ''}
-                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } })}
+                            onChange={linkEvent((e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } }), null)}
                           />
                         </>
                       )}
-                      <button onClick={() => removeTransform(idx)} style={{ marginTop: 4 }}>Remove</button>
+                      <button onClick={linkEvent(() => removeTransform(idx), null)} style={{ marginTop: 4 }}>Remove</button>
                     </div>
                   ))}
-                  <button onClick={addTransform} style={{ fontSize: 12 }}>Add Transform</button>
+                  <button onClick={linkEvent(addTransform, null)} style={{ fontSize: 12 }}>Add Transform</button>
                 </div>
                 <label style={{ fontSize: 12 }}>
                   Outputs (one per line)
                   <textarea
                     value={outputs.join('\n')}
                     placeholder="dashboard: /dash/markets\nalerts: slack://#markets"
-                    onChange={(e) => validateAndUpdate('outputs', e.target.value)}
+                    onChange={linkEvent((e) => validateAndUpdate('outputs', e.target.value), null)}
                   />
                 </label>
               </>

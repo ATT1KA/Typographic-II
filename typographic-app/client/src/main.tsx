@@ -1,6 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { lazy, Suspense } from 'react';
+import { render } from 'inferno';
+import { lazy, Suspense } from 'react'; // Keep for now; remove later if needed
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppShell from './components/AppShell';
@@ -35,8 +34,7 @@ function App() {
 export default App;
 
 const root = document.getElementById('root')!;
-// @ts-ignore - Inferno compat provides render, but React 18 types don't include it
-ReactDOM.render(
+render(
   <ErrorBoundary>
     <App />
   </ErrorBoundary>,
