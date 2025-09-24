@@ -8,6 +8,27 @@ const router = Router();
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
+// Helper: Sanitize nodes (remove functions)
+const sanitizeNodes = (nodes: any[]) => {
+  return nodes.map((n) => {
+    const d = { ...(n.data || {}) };
+    if (d.onChange) delete d.onChange;
+    // Remove any function params in transforms
+    if (d.config?.transforms) {
+      d.config.transforms = d.config.transforms.map((t: any) => {
+        const cleanT = { ...t };
+        if (cleanT.params && typeof cleanT.params === 'object') {
+          Object.keys(cleanT.params).forEach((k) => {
+            if (typeof cleanT.params[k] === 'function') delete cleanT.params[k];
+          });
+        }
+        return cleanT;
+      });
+    }
+    return { ...n, data: d };
+  });
+};
+
 router.get('/_health', (_req, res) => {
   try {
     const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'));
@@ -18,32 +39,36 @@ router.get('/_health', (_req, res) => {
 });
 
 router.get('/:id', (req, res) => {
-  const id = (req.params.id || 'default').trim();
-  const file = path.join(DATA_DIR, `${id}.json`);
+  const { id } = req.params;
+  const flowPath = path.join(DATA_DIR, `${id}.json`);
   try {
-    if (!fs.existsSync(file)) {
+    if (!fs.existsSync(flowPath)) {
       return res.json({ nodes: [], edges: [] });
     }
-    const json = fs.readFileSync(file, 'utf8');
+    const json = fs.readFileSync(flowPath, 'utf8');
     const data = JSON.parse(json);
     if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
-      return res.status(500).json({ error: 'Invalid flow data structure' });
+      throw new Error('Invalid flow data structure');
     }
-    return res.json(data);
+    res.json(data);
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to load flow' });
+    res.status(500).json({ error: 'Failed to load flow', details: String(e) });
   }
 });
 
 router.post('/:id', (req, res) => {
-  const id = (req.params.id || 'default').trim();
-  const file = path.join(DATA_DIR, `${id}.json`);
-  const payload = req.body || {};
+  const { id } = req.params;
+  const { nodes, edges } = req.body || {};
+  if (!Array.isArray(nodes) || !Array.isArray(edges)) {
+    return res.status(400).json({ error: 'Invalid payload: nodes and edges must be arrays' });
+  }
+  const flowPath = path.join(DATA_DIR, `${id}.json`);
   try {
-    fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
-    return res.json({ ok: true, id });
+    const cleanNodes = sanitizeNodes(nodes);
+    fs.writeFileSync(flowPath, JSON.stringify({ nodes: cleanNodes, edges }, null, 2));
+    res.json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ error: 'Failed to save flow' });
+    res.status(500).json({ error: 'Failed to save flow', details: String(e) });
   }
 });
 

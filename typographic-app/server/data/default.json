@@ -32,8 +32,8 @@
     {
       "id": "sci-shipping",
       "position": {
-        "x": -360,
-        "y": -696
+        "x": -312,
+        "y": -648
       },
       "type": "custom",
       "data": {
@@ -91,8 +91,8 @@
     {
       "id": "connectivity-causal-router-1758355003726",
       "position": {
-        "x": 24,
-        "y": -648
+        "x": 72,
+        "y": -600
       },
       "type": "custom",
       "data": {
@@ -201,30 +201,6 @@
         "config": {
           "frequency": "weekly",
           "format": "pdf"
-        }
-      },
-      "measured": {
-        "width": 300,
-        "height": 115
-      },
-      "selected": false,
-      "dragging": true
-    },
-    {
-      "id": "output-dashboard-generator-1758441744385",
-      "position": {
-        "x": 696,
-        "y": -552
-      },
-      "type": "custom",
-      "data": {
-        "label": "Output: Dashboard Generator",
-        "vertical": "Output",
-        "subtype": "Dashboard Generator",
-        "category": "Output",
-        "config": {
-          "frequency": "10m",
-          "layout": "grid"
         }
       },
       "measured": {

@@ -1,15 +1,19 @@
-import { ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { unstable_batchedUpdates } from 'react-dom';
 import {
   Background,
+  BezierEdge,
   Controls,
+  ReactFlow,
+  ReactFlowProvider,
   addEdge,
   Connection,
   Edge,
   MiniMap,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  type EdgeTypes,
   type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -104,6 +108,7 @@ function WorkflowCanvas({
   nodes,
   edges,
   nodeTypes,
+  edgeTypes,
   onNodesChange,
   onEdgesChange,
   onConnect,
@@ -113,6 +118,7 @@ function WorkflowCanvas({
   nodes: Node<NodeData>[];
   edges: Edge[];
   nodeTypes: any;
+  edgeTypes: EdgeTypes;
   onNodesChange: any;
   onEdgesChange: any;
   onConnect: any;
@@ -184,19 +190,21 @@ function WorkflowCanvas({
   }, [rf]);
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      defaultEdgeOptions={defaultEdgeOptions}
-      nodeOrigin={[0, 0]}
-      onNodeDragStop={onNodeDragStop}
-      connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeLinecap: 'round' as any }}
-      fitView={false}
-    >
+    <div className="react-flow-wrapper">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        defaultEdgeOptions={defaultEdgeOptions}
+        nodeOrigin={[0, 0]}
+        onNodeDragStop={onNodeDragStop}
+        connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeLinecap: 'round' as any }}
+        fitView={false}
+      >
       <MiniMap
         nodeColor={useCallback((n: Node) => {
           const v = (n as any)?.data?.vertical as keyof typeof verticalColors | undefined;
@@ -210,8 +218,9 @@ function WorkflowCanvas({
       <div className="reactflow-controls-left-of-minimap">
         <Controls />
       </div>
-  <Background gap={GRID_SIZE} size={2} color="#303030" />
+  <Background gap={GRID_SIZE} size={2} color="#303030"       />
     </ReactFlow>
+    </div>
   );
 }
 
@@ -227,6 +236,7 @@ export default function WorkflowBuilder() {
   const [libraryCategory, setLibraryCategory] = useState<NodeCategory>('Data');
   const initialLoadedRef = useRef(false);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+  const edgeTypes = useMemo<EdgeTypes>(() => ({ bezier: BezierEdge }), []);
 
   const apiUrl = `${API_BASE}/flow/${workflowId}`;
 
@@ -559,7 +569,7 @@ export default function WorkflowBuilder() {
   }, [duplicateSelected, deleteSelected]);
 
   return (
-  <div style={{ height: '100%', minHeight: 500, position: 'relative', background: '#000' }}>
+    <div className="workflow-page" style={{ height: '100%', width: '100%', position: 'relative', background: '#000' }}>
     <ToastContainer
       position="bottom-right"
       autoClose={1600}
@@ -580,7 +590,7 @@ export default function WorkflowBuilder() {
         outputItems={outputItems}
       />
       </Suspense>
-  <div style={{ position: 'relative', height: '100%' }}>
+      <div style={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
   <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>
           Workflow ID:
@@ -604,6 +614,7 @@ export default function WorkflowBuilder() {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}

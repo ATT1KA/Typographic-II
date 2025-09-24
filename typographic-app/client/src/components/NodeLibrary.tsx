@@ -1,4 +1,4 @@
-import { Fragment } from 'inferno';
+import { Fragment } from 'react';
 import { verticalColors } from '../types/flow';
 import type { NodeCategory } from '../types/flow';
 
