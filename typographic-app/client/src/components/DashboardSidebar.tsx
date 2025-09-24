@@ -1,9 +1,20 @@
-import { useState, useMemo } from 'react';
-import { Search, X, ChevronRight, ChevronDown } from 'lucide-react';
-import { Dashboard, WidgetCategory, getWidgetsByCategory, WIDGET_CATEGORIES } from '../types/dashboard';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Pin, PinOff, Plus, Search } from 'lucide-react';
+import {
+  Dashboard,
+  WidgetCategory,
+  WidgetLibraryItem,
+  WidgetType,
+  WIDGET_CATEGORIES,
+  WIDGET_SIZES,
+  getWidgetByType,
+  getWidgetsByCategory
+} from '../types/dashboard';
 
 interface DashboardSidebarProps {
   isOpen: boolean;
+  isPinned: boolean;
+  onPinToggle: () => void;
   onToggle: () => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
@@ -13,8 +24,32 @@ interface DashboardSidebarProps {
   dashboard: Dashboard;
 }
 
+const CATEGORY_FILTERS = ['All', ...WIDGET_CATEGORIES] as const;
+
+type WidgetLibraryGroup = {
+  category: WidgetCategory;
+  items: WidgetLibraryItem[];
+};
+
+function snapCoordinate(value: number, gridSize: number) {
+  return Math.max(0, Math.round(value / gridSize) * gridSize);
+}
+
+function computeCanvasCenterPosition(gridSize: number, canvas: DOMRect | null, widgetType: WidgetType) {
+  const baseWidth = (WIDGET_SIZES[getWidgetByType(widgetType)?.defaultSize ?? 'medium'].width ?? 2) * gridSize;
+  const baseHeight = (WIDGET_SIZES[getWidgetByType(widgetType)?.defaultSize ?? 'medium'].height ?? 1) * gridSize;
+  if (!canvas) {
+    return { x: 0, y: 0 };
+  }
+  const x = snapCoordinate(canvas.width / 2 - baseWidth / 2, gridSize);
+  const y = snapCoordinate(canvas.height / 3 - baseHeight / 2, gridSize);
+  return { x, y };
+}
+
 export default function DashboardSidebar({
   isOpen,
+  isPinned,
+  onPinToggle,
   onToggle,
   selectedCategory,
   onCategoryChange,
@@ -23,352 +58,187 @@ export default function DashboardSidebar({
   onWidgetAdd,
   dashboard
 }: DashboardSidebarProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['Data', 'Visualization', 'Content', 'Navigation', 'Utility'])
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set(WIDGET_CATEGORIES));
 
-  // Filter widgets based on search query
-  const filteredWidgets = useMemo(() => {
-    const allWidgets = WIDGET_CATEGORIES.flatMap(category =>
-      getWidgetsByCategory(category as WidgetCategory)
-    );
+  const gridSize = dashboard.settings.gridSize ?? 48;
 
-    if (!searchQuery.trim()) {
-      return allWidgets;
-    }
+  const filteredGroups = useMemo<WidgetLibraryGroup[]>(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const categoryFilter = selectedCategory || 'All';
 
-    const query = searchQuery.toLowerCase();
-    return allWidgets.filter(widget =>
-      widget.name.toLowerCase().includes(query) ||
-      widget.description.toLowerCase().includes(query) ||
-      widget.type.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+    return WIDGET_CATEGORIES.map(category => {
+      const items = getWidgetsByCategory(category as WidgetCategory).filter(widget => {
+        const matchesCategory = categoryFilter === 'All' || widget.category === categoryFilter;
+        if (!normalizedQuery) return matchesCategory;
+        const normalizedName = widget.name.toLowerCase();
+        const normalizedDescription = widget.description.toLowerCase();
+        const normalizedType = widget.type.toLowerCase();
+        return (
+          matchesCategory &&
+          (normalizedName.includes(normalizedQuery) ||
+            normalizedDescription.includes(normalizedQuery) ||
+            normalizedType.includes(normalizedQuery))
+        );
+      });
+      return { category: category as WidgetCategory, items };
+    }).filter(group => group.items.length > 0);
+  }, [searchQuery, selectedCategory]);
 
-  // Group filtered widgets by category
-  const widgetsByCategory = useMemo(() => {
-    const grouped: { [key: string]: any[] } = {};
+  const flatResults = useMemo(() => filteredGroups.flatMap(group => group.items), [filteredGroups]);
 
-    WIDGET_CATEGORIES.forEach(category => {
-      const categoryWidgets = filteredWidgets.filter(widget => widget.category === category);
-      if (categoryWidgets.length > 0) {
-        grouped[category] = categoryWidgets;
-      }
-    });
-
-    return grouped;
-  }, [filteredWidgets]);
-
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
-        newSet.add(category);
-      }
-      return newSet;
-    });
+  const handleAddWidget = (widgetType: WidgetType) => {
+    const canvas = document.querySelector('.dashboard-canvas-surface')?.getBoundingClientRect() ?? null;
+    const position = computeCanvasCenterPosition(gridSize, canvas, widgetType);
+    onWidgetAdd(widgetType, position);
   };
 
-  const handleWidgetDragStart = (event: React.DragEvent, widgetType: string) => {
-    event.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'dashboard-widget',
-      widgetType
-    }));
+  const handleWidgetDragStart = (event: React.DragEvent<HTMLDivElement>, widgetType: WidgetType) => {
+    event.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({ type: 'dashboard-widget', widgetType })
+    );
     event.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleWidgetClick = (widgetType: string) => {
-    // Add widget to a default position (center of visible area)
-    const canvasRect = document.querySelector('.dashboard-canvas')?.getBoundingClientRect();
-    if (canvasRect) {
-      const centerX = Math.max(0, (canvasRect.width / 2) - 100); // 100px offset from center
-      const centerY = Math.max(0, (canvasRect.height / 2) - 50);  // 50px offset from center
-
-      onWidgetAdd(widgetType, {
-        x: Math.round(centerX / (dashboard.settings.gridSize || 48)),
-        y: Math.round(centerY / (dashboard.settings.gridSize || 48))
-      });
-    }
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
   };
 
   return (
     <>
-      {/* Sidebar toggle button */}
       <button
-        className="sidebar-toggle"
+        className={`dashboard-sidebar-toggle ${isOpen ? 'open' : ''}`}
         onClick={onToggle}
-        style={{
-          position: 'fixed',
-          left: isOpen ? '320px' : '0',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '24px',
-          height: '48px',
-          background: 'var(--bg-elev)',
-          border: '1px solid var(--control-border)',
-          borderRadius: '0 8px 8px 0',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          transition: 'left 0.2s ease',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-        }}
+        title={isOpen ? 'Collapse library' : 'Expand library'}
       >
-        {isOpen ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+        <ChevronRight size={16} />
       </button>
 
-      {/* Sidebar */}
-      <div
-        className="dashboard-sidebar"
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: isOpen ? '320px' : '0',
-          background: 'var(--bg-elev)',
-          borderRight: '1px solid var(--control-border)',
-          overflow: 'hidden',
-          transition: 'width 0.2s ease',
-          zIndex: 99
-        }}
-      >
-        <div
-          style={{
-            width: '320px',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {/* Sidebar header */}
-          <div
-            style={{
-              padding: '16px',
-              borderBottom: '1px solid var(--control-border)',
-              background: 'var(--bg-elev-2)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text)' }}>
-                Widget Library
-              </h3>
-              <button
-                onClick={onToggle}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--muted)',
-                  cursor: 'pointer',
-                  padding: '4px'
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Search */}
-            <div style={{ position: 'relative' }}>
-              <Search
-                size={14}
-                style={{
-                  position: 'absolute',
-                  left: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--muted)'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Search widgets..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '6px 8px 6px 28px',
-                  background: 'var(--control-bg)',
-                  border: '1px solid var(--control-border)',
-                  borderRadius: '4px',
-                  color: 'var(--text)',
-                  fontSize: '12px'
-                }}
-              />
-            </div>
+      <aside className={`dashboard-sidebar ${isOpen ? 'open' : ''} ${isPinned ? 'pinned' : ''}`}>
+        <header className="sidebar-header">
+          <div className="sidebar-title-group">
+            <h2>Widget Library</h2>
+            <p>Compose dashboards with reusable, data-aware widgets.</p>
           </div>
-
-          {/* Category tabs */}
-          <div
-            style={{
-              padding: '12px',
-              borderBottom: '1px solid var(--control-border)'
-            }}
-          >
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {WIDGET_CATEGORIES.map(category => (
-                <button
-                  key={category}
-                  onClick={() => onCategoryChange(category)}
-                  style={{
-                    padding: '4px 8px',
-                    background: selectedCategory === category ? 'var(--accent)' : 'var(--control-bg)',
-                    color: selectedCategory === category ? 'white' : 'var(--text)',
-                    border: '1px solid var(--control-border)',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)'
-                  }}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+          <div className="sidebar-header-actions">
+            <button className="icon-btn" onClick={onPinToggle} title={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}>
+              {isPinned ? <Pin size={14} /> : <PinOff size={14} />}
+            </button>
+            <button className="icon-btn" onClick={onToggle} title="Close library">
+              <ChevronRight size={14} />
+            </button>
           </div>
+        </header>
 
-          {/* Widget list */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
-            {Object.entries(widgetsByCategory).map(([category, widgets]) => (
-              <div key={category} style={{ marginBottom: '16px' }}>
-                <button
-                  onClick={() => toggleCategory(category)}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    background: 'var(--bg-elev-2)',
-                    border: '1px solid var(--control-border)',
-                    borderRadius: '4px',
-                    color: 'var(--text)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    textAlign: 'left'
-                  }}
-                >
-                  <span>{category}</span>
-                  <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
-                    {widgets.length}
-                  </span>
-                </button>
-
-                {expandedCategories.has(category) && (
-                  <div style={{ marginTop: '8px' }}>
-                    {widgets.map(widget => (
-                      <div
-                        key={widget.id}
-                        draggable
-                        onDragStart={(e) => handleWidgetDragStart(e, widget.type)}
-                        onClick={() => handleWidgetClick(widget.type)}
-                        style={{
-                          padding: '12px 8px',
-                          marginBottom: '4px',
-                          background: 'var(--bg-elev-2)',
-                          border: '1px solid var(--control-border)',
-                          borderRadius: '4px',
-                          cursor: 'grab',
-                          transition: 'all 0.2s ease',
-                          opacity: 0.8
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--accent)';
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--control-border)';
-                          e.currentTarget.style.opacity = '0.8';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '16px' }}>{widget.icon}</span>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text)' }}>
-                              {widget.name}
-                            </div>
-                            <div style={{ fontSize: '10px', color: 'var(--muted)' }}>
-                              {widget.description}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{
-                            padding: '2px 6px',
-                            background: 'var(--control-bg)',
-                            borderRadius: '2px',
-                            fontSize: '9px',
-                            color: 'var(--muted)'
-                          }}>
-                            {widget.defaultSize}
-                          </span>
-                          <span style={{
-                            padding: '2px 6px',
-                            background: 'var(--accent)',
-                            borderRadius: '2px',
-                            fontSize: '9px',
-                            color: 'white'
-                          }}>
-                            {widget.type}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {Object.keys(widgetsByCategory).length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                color: 'var(--muted)',
-                fontSize: '14px',
-                padding: '40px 20px'
-              }}>
-                {searchQuery.trim() ? 'No widgets found' : 'No widgets available'}
-              </div>
-            )}
+        <div className="sidebar-search">
+          <div className="search-field">
+            <Search size={14} />
+            <input
+              type="search"
+              placeholder="Search widgets"
+              value={searchQuery}
+              onChange={event => onSearchChange(event.target.value)}
+            />
           </div>
-
-          {/* Dashboard info */}
-          <div
-            style={{
-              padding: '12px',
-              borderTop: '1px solid var(--control-border)',
-              background: 'var(--bg-elev-2)',
-              fontSize: '11px',
-              color: 'var(--muted)'
-            }}
-          >
-            <div>Dashboard: {dashboard.name}</div>
-            <div>Widgets: {dashboard.widgets.length}</div>
-            <div>Grid: {dashboard.settings.gridSize || 48}px</div>
+          <div className="search-meta">
+            <span>{flatResults.length} results</span>
+            <button
+              className="btn-secondary"
+              onClick={() => handleAddWidget(flatResults[0]?.type ?? 'metric')}
+              disabled={!flatResults.length}
+            >
+              <Plus size={12} /> Quick add
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Backdrop for mobile */}
-      {isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 98,
-            display: window.innerWidth <= 768 ? 'block' : 'none'
-          }}
-          onClick={onToggle}
-        />
-      )}
+        <div className="sidebar-filters">
+          {CATEGORY_FILTERS.map(category => (
+            <button
+              key={category}
+              className={`filter-chip ${selectedCategory === category ? 'active' : ''}`}
+              onClick={() => onCategoryChange(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <div className="sidebar-groups">
+          {filteredGroups.map(group => (
+            <div key={group.category} className="sidebar-group">
+              <button className="group-toggle" onClick={() => toggleCategory(group.category)}>
+                <span className="group-icon">{getWidgetByType(group.items[0]?.type)?.icon ?? '📦'}</span>
+                <span className="group-name">{group.category}</span>
+                <span className="group-count">{group.items.length}</span>
+                <span className="group-chevron">
+                  {expandedCategories.has(group.category) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </span>
+              </button>
+              {expandedCategories.has(group.category) && (
+                <div className="group-items">
+                  {group.items.map(widget => (
+                    <div
+                      key={widget.id}
+                      className="widget-card"
+                      draggable
+                      onDragStart={event => handleWidgetDragStart(event, widget.type)}
+                      onClick={() => handleAddWidget(widget.type)}
+                    >
+                      <div className="widget-card-header">
+                        <span className="widget-icon">{widget.icon}</span>
+                        <div className="widget-meta">
+                          <span className="widget-name">{widget.name}</span>
+                          <span className="widget-description">{widget.description}</span>
+                        </div>
+                        <button
+                          className="widget-add"
+                          onClick={event => {
+                            event.stopPropagation();
+                            handleAddWidget(widget.type);
+                          }}
+                          title="Add widget"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                      <div className="widget-tags">
+                        <span className="tag">{widget.category}</span>
+                        <span className="tag">{widget.defaultSize}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {!filteredGroups.length && (
+            <div className="sidebar-empty">
+              <p>No widgets match this search.</p>
+            </div>
+          )}
+        </div>
+
+        <footer className="sidebar-footer">
+          <div>
+            <span className="footer-label">Dashboard</span>
+            <strong>{dashboard.name}</strong>
+          </div>
+          <div className="footer-meta">
+            <span>{dashboard.widgets.length} widgets</span>
+            <span>{gridSize}px grid</span>
+          </div>
+        </footer>
+      </aside>
     </>
   );
 }

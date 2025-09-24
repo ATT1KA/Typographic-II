@@ -2,6 +2,8 @@
 // Dashboard Types
 export type DashboardLayout = 'grid' | 'masonry' | 'flexbox';
 
+export type ISODateString = string;
+
 export type WidgetType =
   | 'metric'
   | 'chart'
@@ -62,23 +64,45 @@ export type WidgetConfig = {
   };
 };
 
+export type DashboardSettings = {
+  backgroundColor?: string;
+  backgroundImage?: string;
+  gridSize?: number;
+  gap?: number;
+  theme?: 'dark' | 'light' | 'auto';
+  refreshInterval?: number;
+};
+
 export type Dashboard = {
   id: string;
   name: string;
   description?: string;
   layout: DashboardLayout;
   widgets: WidgetConfig[];
-  settings: {
-    backgroundColor?: string;
-    backgroundImage?: string;
-    gridSize?: number;
-    gap?: number;
-    theme?: 'dark' | 'light' | 'auto';
-    refreshInterval?: number;
-  };
-  createdAt: Date;
-  updatedAt: Date;
+  settings: DashboardSettings;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
   createdBy?: string;
+};
+
+export type DashboardSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  lastModified: ISODateString;
+  createdAt: ISODateString;
+  connectedWorkflows: string[];
+};
+
+export type DashboardConnection = {
+  dashboardId: string;
+  workflowId: string;
+  nodeId: string;
+  widgetId: string;
+  connectionType: 'data' | 'meta';
+  lastSync?: ISODateString;
+  status: 'active' | 'inactive' | 'error';
 };
 
 // Widget Library Categories
@@ -129,6 +153,50 @@ export const DEFAULT_DASHBOARD: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'
     refreshInterval: 60
   }
 };
+
+export function createDashboardDraft(name: string): Dashboard {
+  const now = new Date().toISOString();
+  return {
+    id: `dash_local_${Date.now()}`,
+    ...DEFAULT_DASHBOARD,
+    name,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+export function normalizeDashboard(payload: any): Dashboard {
+  if (!payload) {
+    return createDashboardDraft('Untitled Dashboard');
+  }
+
+  const now = new Date().toISOString();
+  return {
+    id: payload.id ?? `dash_local_${Date.now()}`,
+    name: payload.name ?? 'Untitled Dashboard',
+    description: payload.description ?? '',
+    layout: (payload.layout ?? 'grid') as DashboardLayout,
+    widgets: Array.isArray(payload.widgets) ? payload.widgets : [],
+    settings: {
+      ...DEFAULT_DASHBOARD.settings,
+      ...(payload.settings ?? {})
+    },
+    createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : now,
+    updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : now,
+    createdBy: payload.createdBy
+  };
+}
+
+export function serializeDashboard(dashboard: Dashboard) {
+  return {
+    id: dashboard.id,
+    name: dashboard.name,
+    description: dashboard.description,
+    layout: dashboard.layout,
+    widgets: dashboard.widgets,
+    settings: dashboard.settings
+  };
+}
 
 // Widget Library Items
 export const WIDGET_LIBRARY: WidgetLibraryItem[] = [

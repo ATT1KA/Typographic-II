@@ -1,20 +1,33 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { Dashboard, WidgetConfig, WIDGET_SIZES } from '../types/dashboard';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Copy, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Dashboard, WidgetConfig, WIDGET_SIZES, WidgetType } from '../types/dashboard';
 
-interface DashboardCanvasProps {
+type DashboardCanvasProps = {
   dashboard: Dashboard;
   selectedWidgets: Set<string>;
   onWidgetSelect: (widgetId: string, multiSelect?: boolean) => void;
   onWidgetUpdate: (widgetId: string, updates: Partial<WidgetConfig>) => void;
   onWidgetDelete: (widgetId: string) => void;
   onWidgetDuplicate: (widgetId: string) => void;
+  onWidgetConfigure?: (widgetId: string) => void;
+  onWidgetCreate?: (widgetType: string, position: { x: number; y: number }) => void;
+};
+
+type DragState = {
+  mode: 'move' | 'resize' | null;
+  widgetId: string | null;
+  start: { x: number; y: number };
+  offset: { x: number; y: number };
+};
+
+const HANDLE_SIZE = 14;
+
+function snapToGrid(value: number, gridSize: number) {
+  return Math.round(value / gridSize) * gridSize;
 }
 
-interface DragState {
-  isDragging: boolean;
-  dragWidget: string | null;
-  dragOffset: { x: number; y: number };
-  dragStart: { x: number; y: number };
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
 }
 
 export default function DashboardCanvas({
@@ -23,568 +36,261 @@ export default function DashboardCanvas({
   onWidgetSelect,
   onWidgetUpdate,
   onWidgetDelete,
-  onWidgetDuplicate
+  onWidgetDuplicate,
+  onWidgetConfigure,
+  onWidgetCreate
 }: DashboardCanvasProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const [dragState, setDragState] = useState<DragState>({
-    isDragging: false,
-    dragWidget: null,
-    dragOffset: { x: 0, y: 0 },
-    dragStart: { x: 0, y: 0 }
+    mode: null,
+    widgetId: null,
+    start: { x: 0, y: 0 },
+    offset: { x: 0, y: 0 }
   });
-  // Grid and snapping constants
-  const GRID_SIZE = dashboard.settings.gridSize || 48;
+  const gridSize = dashboard.settings.gridSize ?? 48;
 
-  // Snap position to grid
-  const snapToGrid = useCallback((position: { x: number; y: number }) => {
-    return {
-      x: Math.round(position.x / GRID_SIZE) * GRID_SIZE,
-      y: Math.round(position.y / GRID_SIZE) * GRID_SIZE
-    };
-  }, [GRID_SIZE]);
+  const widgetsById = useMemo(() => {
+    return new Map(dashboard.widgets.map(widget => [widget.id, widget] as const));
+  }, [dashboard.widgets]);
 
-  // Check if position is valid (within bounds, no overlap)
-  const isValidPosition = useCallback((widgetId: string, position: { x: number; y: number }, size: { width: number; height: number }) => {
-    const widgetRect = {
-      left: position.x,
-      right: position.x + size.width * GRID_SIZE,
-      top: position.y,
-      bottom: position.y + size.height * GRID_SIZE
-    };
-
-    // Check canvas bounds
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
-    if (canvasRect) {
-      const scale = 1; // Fixed zoom for now
-      const canvasWidth = canvasRect.width / scale;
-      const canvasHeight = canvasRect.height / scale;
-
-      if (widgetRect.right > canvasWidth || widgetRect.bottom > canvasHeight) {
-        return false;
-      }
-    }
-
-    // Check overlap with other widgets
-    const overlapping = dashboard.widgets.some(widget => {
-      if (widget.id === widgetId) return false;
-
-      const widgetSize = WIDGET_SIZES[widget.size];
-      const otherRect = {
-        left: widget.position.x,
-        right: widget.position.x + widgetSize.width * GRID_SIZE,
-        top: widget.position.y,
-        bottom: widget.position.y + widgetSize.height * GRID_SIZE
-      };
-
-      return !(
-        widgetRect.right <= otherRect.left ||
-        widgetRect.left >= otherRect.right ||
-        widgetRect.bottom <= otherRect.top ||
-        widgetRect.top >= otherRect.bottom
-      );
-    });
-
-    return !overlapping;
-  }, [dashboard.widgets, GRID_SIZE]);
-
-  // Handle mouse/touch events for widget interaction
-  const handleMouseDown = useCallback((event: React.MouseEvent, widgetId: string) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const widget = dashboard.widgets.find(w => w.id === widgetId);
-    if (!widget) return;
-
-    const startX = event.clientX - rect.left;
-    const startY = event.clientY - rect.top;
-
-    // Check if clicking on resize handle
-    const isResizeHandle = (event.target as HTMLElement).classList.contains('widget-resize-handle');
-    if (isResizeHandle) {
-      handleResizeStart(event, widgetId);
-      return;
-    }
-
-    setDragState({
-      isDragging: true,
-      dragWidget: widgetId,
-      dragOffset: {
-        x: widget.position.x - startX,
-        y: widget.position.y - startY
-      },
-      dragStart: { x: startX, y: startY }
-    });
-
-    onWidgetSelect(widgetId, event.ctrlKey || event.metaKey);
-  }, [dashboard.widgets, onWidgetSelect]);
-
-  const handleResizeStart = useCallback((event: React.MouseEvent, widgetId: string) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    setDragState({
-      isDragging: true,
-      dragWidget: widgetId,
-      dragOffset: { x: 0, y: 0 },
-      dragStart: { x: event.clientX, y: event.clientY }
-    });
-  }, []);
-
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!dragState.isDragging || !dragState.dragWidget) return;
-
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
-
-    const widget = dashboard.widgets.find(w => w.id === dragState.dragWidget);
-    if (!widget) return;
-
-    if (dragState.dragWidget) { // Resize mode
-      const deltaX = currentX - dragState.dragStart.x;
-      const deltaY = currentY - dragState.dragStart.y;
-
-      const newWidth = Math.max(1, widget.position.width + Math.round(deltaX / GRID_SIZE));
-      const newHeight = Math.max(1, widget.position.height + Math.round(deltaY / GRID_SIZE));
-
-      if (isValidPosition(widget.id, widget.position, { width: newWidth, height: newHeight })) {
-        onWidgetUpdate(widget.id, {
-          position: {
-            ...widget.position,
-            width: newWidth,
-            height: newHeight
-          }
-        });
-      }
-    } else { // Move mode
-      const newPosition = snapToGrid({
-        x: currentX + dragState.dragOffset.x,
-        y: currentY + dragState.dragOffset.y
-      });
-
-      if (isValidPosition(widget.id, newPosition, {
-        width: widget.position.width,
-        height: widget.position.height
-      })) {
-        onWidgetUpdate(widget.id, {
-          position: {
-            ...newPosition,
-            width: widget.position.width,
-            height: widget.position.height
-          }
-        });
-      }
-    }
-  }, [dragState, dashboard.widgets, GRID_SIZE, snapToGrid, isValidPosition, onWidgetUpdate]);
-
-  const handleMouseUp = useCallback(() => {
-    setDragState({
-      isDragging: false,
-      dragWidget: null,
-      dragOffset: { x: 0, y: 0 },
-      dragStart: { x: 0, y: 0 }
-    });
-  }, []);
-
-  // Add global event listeners
-  useEffect(() => {
-    if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [dragState.isDragging, handleMouseMove, handleMouseUp]);
-
-  // Handle canvas click for deselection
-  const handleCanvasClick = useCallback((event: React.MouseEvent) => {
+  const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       onWidgetSelect('');
     }
   }, [onWidgetSelect]);
 
-  // Handle keyboard shortcuts
+  const beginDrag = useCallback((mode: DragState['mode'], widgetId: string, event: React.MouseEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const widget = widgetsById.get(widgetId);
+    if (!widget) return;
+    const pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const offset = {
+      x: widget.position.x - pointer.x,
+      y: widget.position.y - pointer.y
+    };
+    setDragState({ mode, widgetId, start: pointer, offset });
+    onWidgetSelect(widgetId, event.metaKey || event.ctrlKey);
+  }, [widgetsById, onWidgetSelect]);
+
+  const endDrag = useCallback(() => {
+    setDragState({ mode: null, widgetId: null, start: { x: 0, y: 0 }, offset: { x: 0, y: 0 } });
+  }, []);
+
+  const handlePointerMove = useCallback((event: MouseEvent) => {
+    if (!dragState.mode || !dragState.widgetId) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const widget = widgetsById.get(dragState.widgetId);
+    if (!widget) return;
+    const pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+
+    if (dragState.mode === 'move') {
+      const next = {
+        x: snapToGrid(pointer.x + dragState.offset.x, gridSize),
+        y: snapToGrid(pointer.y + dragState.offset.y, gridSize)
+      };
+      const maxX = Math.max(0, (canvasRef.current?.clientWidth ?? 0) - widget.position.width * gridSize);
+      const maxY = Math.max(0, (canvasRef.current?.clientHeight ?? 0) - widget.position.height * gridSize);
+      const clamped = {
+        x: clamp(next.x, 0, maxX),
+        y: clamp(next.y, 0, maxY)
+      };
+      onWidgetUpdate(widget.id, { position: { ...widget.position, ...clamped } });
+      return;
+    }
+
+    if (dragState.mode === 'resize') {
+      const deltaX = pointer.x - dragState.start.x;
+      const deltaY = pointer.y - dragState.start.y;
+      const nextWidth = Math.max(1, widget.position.width + Math.round(deltaX / gridSize));
+      const nextHeight = Math.max(1, widget.position.height + Math.round(deltaY / gridSize));
+      onWidgetUpdate(widget.id, { position: { ...widget.position, width: nextWidth, height: nextHeight } });
+    }
+  }, [dragState, gridSize, onWidgetUpdate, widgetsById]);
+
+  useEffect(() => {
+    if (!dragState.mode) return;
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', endDrag);
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', endDrag);
+    };
+  }, [dragState.mode, handlePointerMove, endDrag]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        selectedWidgets.forEach(widgetId => onWidgetDelete(widgetId));
-      } else if (event.key === 'Escape') {
+        selectedWidgets.forEach(id => onWidgetDelete(id));
+      }
+      if (event.key === 'Escape') {
         onWidgetSelect('');
       }
     };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedWidgets, onWidgetDelete, onWidgetSelect]);
 
-  // Render grid background
-  const renderGrid = () => {
-    const gridLines = [];
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
-
-    if (!canvasRect) return null;
-
-    const width = canvasRect.width;
-    const height = canvasRect.height;
-    const scaledGridSize = GRID_SIZE * 1; // Fixed zoom for now
-
-    // Vertical lines
-    for (let x = 0; x <= width; x += scaledGridSize) {
-      gridLines.push(
-        <line
-          key={`v-${x}`}
-          x1={x}
-          y1={0}
-          x2={x}
-          y2={height}
-          stroke="var(--control-border)"
-          strokeWidth={x % (scaledGridSize * 4) === 0 ? 1 : 0.5}
-        />
-      );
+  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const payload = event.dataTransfer.getData('application/json');
+    try {
+      const parsed = JSON.parse(payload);
+      if (parsed?.type === 'dashboard-widget' && typeof parsed.widgetType === 'string') {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        const position = {
+          x: snapToGrid(pointer.x, gridSize),
+          y: snapToGrid(pointer.y, gridSize)
+        };
+        onWidgetCreate?.(parsed.widgetType, position);
+      }
+    } catch {
+      /* ignore malformed drops */
     }
+  }, [gridSize, onWidgetCreate]);
 
-    // Horizontal lines
-    for (let y = 0; y <= height; y += scaledGridSize) {
-      gridLines.push(
-        <line
-          key={`h-${y}`}
-          x1={0}
-          y1={y}
-          x2={width}
-          y2={y}
-          stroke="var(--control-border)"
-          strokeWidth={y % (scaledGridSize * 4) === 0 ? 1 : 0.5}
-        />
-      );
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    if (event.dataTransfer.types.includes('application/json')) {
+      event.preventDefault();
     }
+  }, []);
 
-    return (
-      <svg
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}
-      >
-        {gridLines}
-      </svg>
-    );
-  };
-
-  // Render widget
   const renderWidget = (widget: WidgetConfig) => {
     const isSelected = selectedWidgets.has(widget.id);
-
+    const width = widget.position.width * gridSize;
+    const height = widget.position.height * gridSize;
     return (
-      <div
+      <article
         key={widget.id}
         className={`dashboard-widget ${isSelected ? 'selected' : ''}`}
         style={{
-          position: 'absolute',
           left: widget.position.x,
           top: widget.position.y,
-          width: widget.position.width * GRID_SIZE,
-          height: widget.position.height * GRID_SIZE,
-          background: widget.style?.backgroundColor || 'var(--bg-elev)',
-          border: `1px solid ${widget.style?.borderColor || 'var(--control-border)'}`,
-          borderRadius: widget.style?.borderRadius || 8,
-          opacity: widget.style?.opacity || 1,
-          cursor: dragState.isDragging ? 'grabbing' : 'grab',
-          zIndex: isSelected ? 10 : 1,
-          transition: dragState.isDragging ? 'none' : 'all 0.2s ease',
-          boxShadow: isSelected
-            ? '0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.15)'
-            : '0 2px 8px rgba(0,0,0,0.1)'
+          width,
+          height,
+          borderRadius: widget.style?.borderRadius ?? 12,
+          background: widget.style?.backgroundColor ?? 'rgba(34,34,34,0.85)',
+          border: `1px solid ${widget.style?.borderColor ?? 'var(--control-border)'}`,
+          color: widget.style?.textColor ?? 'var(--text)'
         }}
-        onMouseDown={(e) => handleMouseDown(e, widget.id)}
+        onMouseDown={event => beginDrag('move', widget.id, event)}
       >
-        {/* Widget header */}
-        <div
-          className="widget-header"
-          style={{
-            padding: '8px 12px',
-            borderBottom: '1px solid var(--control-border)',
-            background: 'var(--bg-elev-2)',
-            borderRadius: `${widget.style?.borderRadius || 8}px ${widget.style?.borderRadius || 8}px 0 0`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text)' }}>
-            {widget.title}
+        <header className="widget-toolbar">
+          <div className="widget-title">
+            <strong>{widget.title}</strong>
+            {widget.description ? <span>{widget.description}</span> : null}
           </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button
-              className="widget-action-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onWidgetDuplicate(widget.id);
-              }}
-              title="Duplicate"
-            >
-              📋
+          <div className="widget-actions">
+            <button onClick={event => { event.stopPropagation(); onWidgetDuplicate(widget.id); }} title="Duplicate widget">
+              <Copy size={14} />
             </button>
-            <button
-              className="widget-action-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                onWidgetDelete(widget.id);
-              }}
-              title="Delete"
-            >
-              🗑️
+            <button onClick={event => { event.stopPropagation(); onWidgetDelete(widget.id); }} title="Remove widget" className="danger">
+              <Trash2 size={14} />
             </button>
+            {onWidgetConfigure ? (
+              <button onClick={event => { event.stopPropagation(); onWidgetConfigure(widget.id); }} title="Configure widget">
+                <SlidersHorizontal size={14} />
+              </button>
+            ) : null}
           </div>
-        </div>
-
-        {/* Widget content */}
-        <div
-          className="widget-content"
-          style={{
-            padding: '12px',
-            height: 'calc(100% - 40px)',
-            overflow: 'hidden',
-            color: widget.style?.textColor || 'var(--text)'
+        </header>
+        <section className="widget-body">
+          <WidgetPreview widget={widget} />
+        </section>
+        <button
+          className="widget-resize-handle"
+          style={{ width: HANDLE_SIZE, height: HANDLE_SIZE }}
+          title="Resize"
+          onMouseDown={event => {
+            event.stopPropagation();
+            beginDrag('resize', widget.id, event);
           }}
-        >
-          <WidgetContent widget={widget} />
-        </div>
-
-        {/* Resize handles */}
-        <div
-          className="widget-resize-handle resize-handle-se"
-          style={{
-            position: 'absolute',
-            right: 0,
-            bottom: 0,
-            width: '20px',
-            height: '20px',
-            cursor: 'nw-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
-        >
-          ↖️
-        </div>
-        <div
-          className="widget-resize-handle resize-handle-s"
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '20px',
-            height: '20px',
-            cursor: 's-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
-        >
-          ↓
-        </div>
-        <div
-          className="widget-resize-handle resize-handle-e"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            right: 0,
-            transform: 'translateY(-50%)',
-            width: '20px',
-            height: '20px',
-            cursor: 'e-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
-        >
-          →
-        </div>
-      </div>
+        />
+      </article>
     );
-  };
-
-  // Widget content renderer
-  const WidgetContent = ({ widget }: { widget: WidgetConfig }) => {
-    switch (widget.type) {
-      case 'metric':
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent)' }}>
-              1,234
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Sample Metric
-            </div>
-          </div>
-        );
-
-      case 'chart':
-        return (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ color: 'var(--muted)', fontSize: '14px' }}>
-              📊 Chart Widget
-            </div>
-          </div>
-        );
-
-      case 'table':
-        return (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ color: 'var(--muted)', fontSize: '14px' }}>
-              📋 Table Widget
-            </div>
-          </div>
-        );
-
-      case 'text':
-        return (
-          <div style={{ height: '100%', padding: '8px', background: 'var(--bg-elev-2)', borderRadius: '4px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-              Rich Text Content
-            </div>
-            <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
-              This is a sample text widget. You can edit this content and format it using markdown.
-            </div>
-          </div>
-        );
-
-      case 'progress':
-        return (
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
-              Progress: 75%
-            </div>
-            <div style={{
-              width: '100%',
-              height: '8px',
-              background: 'var(--bg-elev-2)',
-              borderRadius: '4px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: '75%',
-                height: '100%',
-                background: 'var(--accent)',
-                borderRadius: '4px'
-              }} />
-            </div>
-          </div>
-        );
-
-      case 'status':
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>🟢</div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Operational
-            </div>
-          </div>
-        );
-
-      case 'gauge':
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', marginBottom: '8px' }}>🎯</div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-              Gauge: 75/100
-            </div>
-          </div>
-        );
-
-      case 'list':
-        return (
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
-              Sample List
-            </div>
-            <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px' }}>
-              <li>Item 1</li>
-              <li>Item 2</li>
-              <li>Item 3</li>
-            </ul>
-          </div>
-        );
-
-      default:
-        return (
-          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ color: 'var(--muted)', fontSize: '14px' }}>
-              Unknown Widget Type: {widget.type}
-            </div>
-          </div>
-        );
-    }
   };
 
   return (
     <div
       ref={canvasRef}
-      className="dashboard-canvas"
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        background: dashboard.settings.backgroundColor || 'var(--bg)',
-        overflow: 'hidden',
-        userSelect: dragState.isDragging ? 'none' : 'auto'
-      }}
+      className="dashboard-canvas-surface"
       onClick={handleCanvasClick}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
     >
-      {/* Grid background */}
-      {renderGrid()}
-
-      {/* Widgets */}
+      <div className="dashboard-canvas-grid" style={{ backgroundSize: `${gridSize}px ${gridSize}px` }} />
       {dashboard.widgets.map(renderWidget)}
-
-      {/* Empty state */}
-      {dashboard.widgets.length === 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          color: 'var(--muted)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-          <div style={{ fontSize: '18px', marginBottom: '8px' }}>No widgets yet</div>
-          <div style={{ fontSize: '14px' }}>Add widgets from the sidebar to get started</div>
+      {!dashboard.widgets.length && (
+        <div className="dashboard-empty-state">
+          <div className="empty-icon">📊</div>
+          <h3>Drop widgets to get started</h3>
+          <p>Connect output nodes from the workflow builder to stream real data into your dashboard.</p>
         </div>
       )}
-
-      {/* Canvas info */}
-      <div style={{
-        position: 'absolute',
-        bottom: '12px',
-        right: '12px',
-        background: 'var(--bg-elev)',
-        border: '1px solid var(--control-border)',
-        borderRadius: '4px',
-        padding: '4px 8px',
-        fontSize: '11px',
-        color: 'var(--muted)',
-        zIndex: 100
-      }}>
-        {dashboard.widgets.length} widgets • Grid: {GRID_SIZE}px
+      <div className="dashboard-meta">
+        <span>{dashboard.widgets.length} widgets</span>
+        <span>Grid {gridSize}px</span>
       </div>
     </div>
   );
+}
+
+function WidgetPreview({ widget }: { widget: WidgetConfig }) {
+  switch (widget.type) {
+    case 'metric':
+      return (
+        <div className="preview-metric">
+          <span className="metric-value">1,234</span>
+          <span className="metric-label">Sample metric</span>
+        </div>
+      );
+    case 'chart':
+      return <div className="preview-placeholder">Chart preview</div>;
+    case 'table':
+      return <div className="preview-placeholder">Table preview</div>;
+    case 'text':
+      return (
+        <div className="preview-text">
+          <h4>Rich text content</h4>
+          <p>Use markdown to format copy and contextual notes.</p>
+        </div>
+      );
+    case 'progress':
+      return (
+        <div className="preview-progress">
+          <span>Progress</span>
+          <div className="progress-track">
+            <div className="progress-value" style={{ width: '74%' }} />
+          </div>
+          <span className="progress-meta">74%</span>
+        </div>
+      );
+    case 'status':
+      return (
+        <div className="preview-status">
+          <span className="status-dot" />
+          <div>
+            <strong>Operational</strong>
+            <small>All systems stable</small>
+          </div>
+        </div>
+      );
+    case 'gauge':
+      return (
+        <div className="preview-placeholder">Gauge preview</div>
+      );
+    case 'list':
+      return (
+        <ul className="preview-list">
+          <li>Item one</li>
+          <li>Item two</li>
+          <li>Item three</li>
+        </ul>
+      );
+    default:
+      return <div className="preview-placeholder">Widget {widget.type}</div>;
+  }
 }
