@@ -1,289 +1,143 @@
-import { Save, FolderOpen, Plus, Trash2, Copy, Download, Upload, Settings } from 'lucide-react';
+import { useMemo, useRef } from 'react';
+import {
+  Copy,
+  Download,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Save,
+  Settings,
+  Trash2,
+  Upload
+} from 'lucide-react';
 import { Dashboard } from '../types/dashboard';
 
-interface DashboardToolbarProps {
+type ToolbarStatus = 'idle' | 'loading' | 'saving';
+
+type DashboardToolbarProps = {
   dashboard: Dashboard;
-  isSaving: boolean;
+  status: ToolbarStatus;
   isDirty: boolean;
   selectedWidgetsCount: number;
+  onRename: (name: string) => void;
   onSave: () => void;
   onNew: () => void;
+  onToggleMenu: () => void;
+  onDuplicateDashboard: () => void;
+  onDeleteDashboard: () => void;
   onExport: () => void;
   onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDuplicate: () => void;
-  onDeleteSelected: () => void;
+  onDuplicateWidgets: () => void;
+  onDeleteWidgets: () => void;
   onSettings: () => void;
-}
+};
 
 export default function DashboardToolbar({
   dashboard,
-  isSaving,
+  status,
   isDirty,
   selectedWidgetsCount,
+  onRename,
   onSave,
   onNew,
+  onToggleMenu,
+  onDuplicateDashboard,
+  onDeleteDashboard,
   onExport,
   onImport,
-  onDuplicate,
-  onDeleteSelected,
+  onDuplicateWidgets,
+  onDeleteWidgets,
   onSettings
 }: DashboardToolbarProps) {
+  const importRef = useRef<HTMLInputElement | null>(null);
+  const isSaving = status === 'saving';
+
+  const statusLabel = useMemo(() => {
+    if (status === 'loading') return 'Loading…';
+    if (status === 'saving') return 'Saving…';
+    if (isDirty) return 'Unsaved changes';
+    return 'Up to date';
+  }, [status, isDirty]);
+
   const handleImportClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => onImport(e as any);
-    input.click();
+    if (!importRef.current) {
+      importRef.current = document.createElement('input');
+      importRef.current.type = 'file';
+      importRef.current.accept = '.json';
+      importRef.current.onchange = (event: any) => onImport(event as React.ChangeEvent<HTMLInputElement>);
+    }
+    importRef.current.value = '';
+    importRef.current.click();
   };
 
   return (
-    <div
-      className="dashboard-toolbar"
-      style={{
-        height: '48px',
-        background: 'var(--bg-elev)',
-        borderBottom: '1px solid var(--control-border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        zIndex: 50
-      }}
-    >
-      {/* Left section - Dashboard info and primary actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Dashboard name and status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text)' }}>
-            {dashboard.name}
-          </div>
-          {isDirty && (
-            <div style={{
-              fontSize: '10px',
-              color: 'white',
-              background: 'var(--accent)',
-              padding: '2px 6px',
-              borderRadius: '2px'
-            }}>
-              UNSAVED
-            </div>
-          )}
-          {isSaving && (
-            <div style={{
-              fontSize: '10px',
-              color: 'var(--muted)',
-              padding: '2px 6px'
-            }}>
-              Saving...
-            </div>
-          )}
+    <header className="dashboard-toolbar">
+      <div className="toolbar-main">
+        <div className="toolbar-title-group">
+          <input
+            className="dashboard-name-input"
+            value={dashboard.name}
+            onChange={event => onRename(event.target.value)}
+            placeholder="Untitled dashboard"
+          />
+          <div className={`dashboard-status ${status}`}>{statusLabel}</div>
         </div>
-
-        {/* Primary actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            style={{
-              padding: '6px 12px',
-              background: isSaving ? 'var(--bg-elev-2)' : 'var(--accent)',
-              color: isSaving ? 'var(--muted)' : 'white',
-              border: '1px solid var(--control-border)',
-              borderRadius: '4px',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontFamily: 'var(--font-mono)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Save dashboard (Ctrl+S)"
-          >
-            <Save size={14} />
-            {isSaving ? 'Saving...' : 'Save'}
+        <div className="toolbar-primary-actions">
+          <button className="btn-primary" onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
+            {isSaving ? 'Saving…' : 'Save'}
           </button>
-
-          <button
-            onClick={onNew}
-            style={{
-              padding: '6px 12px',
-              background: 'var(--control-bg)',
-              color: 'var(--text)',
-              border: '1px solid var(--control-border)',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontFamily: 'var(--font-mono)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="New dashboard (Ctrl+N)"
-          >
+          <button className="btn-secondary" onClick={onNew}>
             <Plus size={14} />
             New
           </button>
+          <button className="btn-secondary" onClick={onToggleMenu}>
+            <MoreHorizontal size={14} />
+            Dashboards
+          </button>
         </div>
       </div>
 
-      {/* Center section - Dashboard management */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <button
-          style={{
-            padding: '6px 12px',
-            background: 'var(--control-bg)',
-            color: 'var(--text)',
-            border: '1px solid var(--control-border)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontFamily: 'var(--font-mono)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Open dashboard menu"
-        >
-          <FolderOpen size={14} />
-          Dashboards
-        </button>
-
-        <button
-          onClick={onExport}
-          style={{
-            padding: '6px 12px',
-            background: 'var(--control-bg)',
-            color: 'var(--text)',
-            border: '1px solid var(--control-border)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontFamily: 'var(--font-mono)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Export dashboard"
-        >
-          <Download size={14} />
-          Export
-        </button>
-
-        <button
-          onClick={handleImportClick}
-          style={{
-            padding: '6px 12px',
-            background: 'var(--control-bg)',
-            color: 'var(--text)',
-            border: '1px solid var(--control-border)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontFamily: 'var(--font-mono)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Import dashboard"
-        >
-          <Upload size={14} />
-          Import
-        </button>
+      <div className="toolbar-secondary">
+        <div className="secondary-group">
+          <button className="btn-secondary" onClick={onDuplicateDashboard}>
+            <Copy size={14} />
+            Duplicate
+          </button>
+          <button className="btn-secondary danger" onClick={onDeleteDashboard}>
+            <Trash2 size={14} />
+            Delete
+          </button>
+        </div>
+        <div className="secondary-group">
+          <button className="btn-secondary" onClick={onExport}>
+            <Download size={14} />
+            Export
+          </button>
+          <button className="btn-secondary" onClick={handleImportClick}>
+            <Upload size={14} />
+            Import
+          </button>
+        </div>
+        <div className="secondary-group">
+          {selectedWidgetsCount > 0 && (
+            <>
+              <button className="btn-secondary" onClick={onDuplicateWidgets}>
+                <Copy size={14} />
+                Duplicate {selectedWidgetsCount}
+              </button>
+              <button className="btn-secondary danger" onClick={onDeleteWidgets}>
+                <Trash2 size={14} />
+                Delete {selectedWidgetsCount}
+              </button>
+            </>
+          )}
+          <button className="btn-secondary" onClick={onSettings}>
+            <Settings size={14} />
+            Settings
+          </button>
+        </div>
       </div>
-
-      {/* Right section - Widget actions and settings */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        {selectedWidgetsCount > 0 && (
-          <>
-            <div style={{
-              fontSize: '11px',
-              color: 'var(--muted)',
-              marginRight: '8px'
-            }}>
-              {selectedWidgetsCount} selected
-            </div>
-
-            <button
-              onClick={onDuplicate}
-              style={{
-                padding: '6px 12px',
-                background: 'var(--control-bg)',
-                color: 'var(--text)',
-                border: '1px solid var(--control-border)',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontFamily: 'var(--font-mono)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="Duplicate selected widgets (Ctrl+D)"
-            >
-              <Copy size={14} />
-              Duplicate
-            </button>
-
-            <button
-              onClick={onDeleteSelected}
-              style={{
-                padding: '6px 12px',
-                background: 'var(--accent-3)',
-                color: 'white',
-                border: '1px solid var(--control-border)',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontFamily: 'var(--font-mono)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="Delete selected widgets (Del)"
-            >
-              <Trash2 size={14} />
-              Delete
-            </button>
-          </>
-        )}
-
-        <button
-          onClick={onSettings}
-          style={{
-            padding: '6px 12px',
-            background: 'var(--control-bg)',
-            color: 'var(--text)',
-            border: '1px solid var(--control-border)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontFamily: 'var(--font-mono)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Dashboard settings"
-        >
-          <Settings size={14} />
-          Settings
-        </button>
-      </div>
-
-      {/* Keyboard shortcuts hint */}
-      <div style={{
-        position: 'absolute',
-        bottom: '-20px',
-        right: '16px',
-        fontSize: '10px',
-        color: 'var(--muted)',
-        background: 'var(--bg-elev-2)',
-        padding: '2px 6px',
-        borderRadius: '2px',
-        border: '1px solid var(--control-border)'
-      }}>
-        Ctrl+S Save • Ctrl+N New • Del Delete
-      </div>
-    </div>
+    </header>
   );
 }
