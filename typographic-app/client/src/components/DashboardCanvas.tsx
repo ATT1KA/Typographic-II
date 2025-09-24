@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { Settings2 } from 'lucide-react';
 import { Dashboard, WidgetConfig, WIDGET_SIZES } from '../types/dashboard';
 
 interface DashboardCanvasProps {
@@ -8,6 +9,7 @@ interface DashboardCanvasProps {
   onWidgetUpdate: (widgetId: string, updates: Partial<WidgetConfig>) => void;
   onWidgetDelete: (widgetId: string) => void;
   onWidgetDuplicate: (widgetId: string) => void;
+  onWidgetConfigure: (widgetId: string) => void;
 }
 
 interface DragState {
@@ -23,7 +25,8 @@ export default function DashboardCanvas({
   onWidgetSelect,
   onWidgetUpdate,
   onWidgetDelete,
-  onWidgetDuplicate
+  onWidgetDuplicate,
+  onWidgetConfigure
 }: DashboardCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState>({
@@ -327,6 +330,16 @@ export default function DashboardCanvas({
             {widget.title}
           </div>
           <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              className="widget-action-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onWidgetConfigure(widget.id);
+              }}
+              title="Configure"
+            >
+              <Settings2 size={13} />
+            </button>
             <button
               className="widget-action-btn"
               onClick={(e) => {

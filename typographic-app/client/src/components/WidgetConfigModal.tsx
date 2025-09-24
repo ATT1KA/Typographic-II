@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
-import { X, Settings, Save, RotateCcw } from 'lucide-react';
+import { X, Settings, Save, RotateCcw, Plug } from 'lucide-react';
 import { WidgetConfig, getWidgetByType } from '../types/dashboard';
+
+type WorkflowOutput = {
+  id: string;
+  nodeId: string;
+  label: string;
+  summary?: string;
+  workflowId: string;
+  vertical?: string;
+  subtype?: string;
+};
 
 interface WidgetConfigModalProps {
   widget: WidgetConfig;
   isOpen: boolean;
   onClose: () => void;
   onSave: (widgetId: string, updates: Partial<WidgetConfig>) => void;
+  availableOutputs?: WorkflowOutput[];
+  workflowId?: string;
 }
 
 interface ConfigFieldProps {
@@ -158,7 +170,9 @@ export default function WidgetConfigModal({
   widget,
   isOpen,
   onClose,
-  onSave
+  onSave,
+  availableOutputs,
+  workflowId
 }: WidgetConfigModalProps) {
   const [config, setConfig] = useState<Partial<WidgetConfig>>({});
   const [activeTab, setActiveTab] = useState<'basic' | 'style' | 'data'>('basic');
@@ -240,6 +254,7 @@ export default function WidgetConfigModal({
                 className={`config-tab ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab as any)}
               >
+                {tab === 'data' ? <Plug size={14} style={{ marginRight: 6 }} /> : null}
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
@@ -370,23 +385,45 @@ export default function WidgetConfigModal({
                     borderRadius: '4px',
                     border: '1px solid var(--control-border)'
                   }}>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                      No data connections configured yet.
-                    </div>
-                    <button
-                      style={{
-                        marginTop: '8px',
-                        padding: '4px 8px',
-                        background: 'var(--accent)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Connect to Workflow
-                    </button>
+                    {availableOutputs && availableOutputs.length > 0 ? (
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {availableOutputs.map(output => {
+                          const isConnected = widget.dataSource?.nodeId === output.nodeId;
+                          return (
+                            <button
+                              key={output.id}
+                              onClick={() => updateConfig({
+                                dataSource: {
+                                  workflowId: workflowId ?? output.workflowId,
+                                  nodeId: output.nodeId,
+                                  outputType: 'data'
+                                }
+                              })}
+                              style={{
+                                textAlign: 'left',
+                                padding: 10,
+                                borderRadius: 6,
+                                border: `1px solid ${isConnected ? 'var(--accent)' : 'var(--control-border)'}`,
+                                background: isConnected ? 'rgba(108,92,231,0.18)' : 'var(--control-bg)',
+                                color: 'var(--text)'
+                              }}
+                            >
+                              <div style={{ fontSize: 13, fontWeight: 600 }}>{output.label}</div>
+                              {output.summary && (
+                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{output.summary}</div>
+                              )}
+                              <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
+                                Node: {output.nodeId} • Workflow: {output.workflowId}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                        No data connections configured yet. Configure Output nodes within the workflow to use live data.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

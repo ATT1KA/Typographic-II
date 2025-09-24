@@ -726,44 +726,46 @@
 
 /* Dashboard Toolbar Styles */
 .dashboard-toolbar {
-  background: var(--bg-elev);
+  background: linear-gradient(180deg, rgba(18,18,22,0.94), rgba(14,14,16,0.96));
   border-bottom: 1px solid var(--control-border);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  box-shadow: 0 16px 38px rgba(0,0,0,0.32);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
 .dashboard-toolbar button {
-  background: var(--control-bg);
-  border: 1px solid var(--control-border);
-  border-radius: 4px;
+  background: rgba(22,22,26,0.86);
+  border: 1px solid color-mix(in oklab, var(--control-border), white 8%);
+  border-radius: 10px;
   color: var(--text);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 12px;
-  padding: 6px 12px;
-  transition: all 0.15s ease;
+  padding: 7px 14px;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.28);
+  gap: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.28), 0 6px 12px rgba(0,0,0,0.18);
 }
 
 .dashboard-toolbar button:hover {
-  border-color: var(--accent);
-  background: var(--bg-elev-2);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.24);
+  border-color: color-mix(in oklab, var(--accent), white 12%);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.22), 0 10px 20px rgba(0,0,0,0.26);
 }
 
 .dashboard-toolbar button:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  background: var(--bg-elev-2);
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), inset 0 -1px 0 rgba(0,0,0,0.18);
 }
 
 .dashboard-toolbar button:disabled:hover {
-  border-color: var(--control-border);
-  background: var(--bg-elev-2);
+  border-color: color-mix(in oklab, var(--control-border), white 6%);
+  background: rgba(22,22,26,0.86);
+  transform: none;
 }
 
 /* Widget Library Item Styles */
@@ -1388,4 +1390,10 @@
   .config-content {
     max-height: 300px;
   }
+}
+
+.dashboard-toolbar button,
+.dashboard-toolbar button:hover,
+.dashboard-toolbar button:disabled {
+  border-radius: 10px;
 }

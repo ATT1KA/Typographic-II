@@ -2,6 +2,8 @@
 // Dashboard Types
 export type DashboardLayout = 'grid' | 'masonry' | 'flexbox';
 
+export type DashboardDensity = 'comfortable' | 'compact' | 'cozy';
+
 export type WidgetType =
   | 'metric'
   | 'chart'
@@ -14,7 +16,12 @@ export type WidgetType =
   | 'status'
   | 'list'
   | 'calendar'
-  | 'gauge';
+  | 'gauge'
+  | 'kanban'
+  | 'stat'
+  | 'heatmap'
+  | 'kpi'
+  | 'custom';
 
 export type ChartType =
   | 'line'
@@ -25,16 +32,36 @@ export type ChartType =
   | 'scatter'
   | 'heatmap'
   | 'radar'
-  | 'treemap';
+  | 'treemap'
+  | 'histogram'
+  | 'bubble'
+  | 'candlestick';
 
-export type WidgetSize = 'small' | 'medium' | 'large' | 'xlarge';
+export type WidgetSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
+
+export type WidgetFilterOperator =
+  | 'eq'
+  | 'neq'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'between'
+  | 'contains'
+  | 'startsWith'
+  | 'endsWith'
+  | 'in'
+  | 'notIn'
+  | 'isEmpty'
+  | 'isNotEmpty';
 
 export type DataSource = {
   workflowId: string;
   nodeId: string;
   outputType: 'data' | 'meta';
   endpoint?: string;
-  refreshInterval?: number; // in seconds
+  refreshInterval?: number; // seconds
+  lastSyncedAt?: string;
 };
 
 export type WidgetPosition = {
@@ -42,6 +69,34 @@ export type WidgetPosition = {
   y: number;
   width: number;
   height: number;
+};
+
+export type WidgetStyle = {
+  backgroundColor?: string;
+  borderColor?: string;
+  textColor?: string;
+  borderRadius?: number;
+  opacity?: number;
+  elevation?: number;
+  accentColor?: string;
+  backdropBlur?: number;
+  showTitleBar?: boolean;
+};
+
+export type WidgetVisual = {
+  type?: string;
+  variant?: string;
+  palette?: string;
+  options?: Record<string, any>;
+};
+
+export type WidgetFilter = {
+  id?: string;
+  label?: string;
+  field: string;
+  operator: WidgetFilterOperator;
+  value: unknown;
+  enabled?: boolean;
 };
 
 export type WidgetConfig = {
@@ -52,14 +107,34 @@ export type WidgetConfig = {
   size: WidgetSize;
   position: WidgetPosition;
   dataSource?: DataSource;
-  settings: Record<string, any>; // Widget-specific settings
-  style?: {
-    backgroundColor?: string;
-    borderColor?: string;
-    textColor?: string;
-    borderRadius?: number;
-    opacity?: number;
-  };
+  refreshInterval?: number;
+  settings: Record<string, any>;
+  style?: WidgetStyle;
+  visual?: WidgetVisual;
+  filters?: WidgetFilter[];
+};
+
+export type DashboardSettings = {
+  backgroundColor?: string;
+  backgroundImage?: string;
+  gridSize?: number;
+  gap?: number;
+  theme?: 'dark' | 'light' | 'auto';
+  refreshInterval?: number;
+  density?: DashboardDensity;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
+};
+
+export type DashboardMetadata = {
+  icon?: string;
+  color?: string;
+  tags?: string[];
+  owner?: string;
+  defaultWorkflowId?: string;
+  lastViewedWorkflowId?: string;
+  favorite?: boolean;
+  descriptionSummary?: string;
 };
 
 export type Dashboard = {
@@ -68,21 +143,40 @@ export type Dashboard = {
   description?: string;
   layout: DashboardLayout;
   widgets: WidgetConfig[];
-  settings: {
-    backgroundColor?: string;
-    backgroundImage?: string;
-    gridSize?: number;
-    gap?: number;
-    theme?: 'dark' | 'light' | 'auto';
-    refreshInterval?: number;
-  };
+  settings: DashboardSettings;
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
+  metadata?: DashboardMetadata;
+};
+
+export type DashboardSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  lastModified: Date;
+  createdAt: Date;
+  connectedWorkflows: string[];
+  metadata?: DashboardMetadata;
+};
+
+export type DashboardPayload = Omit<Dashboard, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DashboardSummaryPayload = Omit<DashboardSummary, 'createdAt' | 'lastModified'> & {
+  createdAt: string;
+  lastModified: string;
+};
+
+export type DashboardCollectionResponse = {
+  dashboards: DashboardSummary[];
 };
 
 // Widget Library Categories
-export type WidgetCategory = 'Data' | 'Visualization' | 'Content' | 'Navigation' | 'Utility';
+export type WidgetCategory = 'Data' | 'Visualization' | 'Content' | 'Navigation' | 'Utility' | 'Operations' | 'AI';
 
 export type WidgetLibraryItem = {
   id: string;
@@ -96,24 +190,35 @@ export type WidgetLibraryItem = {
   supportedDataTypes: string[];
   configOptions: {
     key: string;
-    type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'range';
+    type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'range' | 'multiselect';
     label: string;
     required: boolean;
     defaultValue: any;
     options?: { label: string; value: any }[];
     min?: number;
     max?: number;
+    step?: number;
+    helperText?: string;
   }[];
 };
 
-// Predefined widget templates
-export const WIDGET_CATEGORIES: WidgetCategory[] = ['Data', 'Visualization', 'Content', 'Navigation', 'Utility'];
+export type WidgetLibraryGroup = {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  items: WidgetLibraryItem[];
+};
 
-export const WIDGET_SIZES: { [key in WidgetSize]: { width: number; height: number } } = {
+// Predefined widget templates
+export const WIDGET_CATEGORIES: WidgetCategory[] = ['Data', 'Visualization', 'Content', 'Navigation', 'Utility', 'Operations', 'AI'];
+
+export const WIDGET_SIZES: Record<WidgetSize, { width: number; height: number }> = {
   small: { width: 1, height: 1 },
   medium: { width: 2, height: 1 },
   large: { width: 2, height: 2 },
-  xlarge: { width: 3, height: 2 }
+  xlarge: { width: 3, height: 2 },
+  xxlarge: { width: 4, height: 3 }
 };
 
 export const DEFAULT_DASHBOARD: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -126,165 +231,201 @@ export const DEFAULT_DASHBOARD: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'
     gridSize: 48,
     gap: 12,
     theme: 'dark',
-    refreshInterval: 60
+    refreshInterval: 60,
+    density: 'comfortable',
+    showGrid: true,
+    snapToGrid: true
+  },
+  createdBy: undefined,
+  metadata: {
+    icon: '📊',
+    color: '#6c5ce7',
+    tags: [],
+    defaultWorkflowId: 'default',
+    lastViewedWorkflowId: 'default',
+    favorite: false
   }
 };
 
+export function parseDashboard(payload: DashboardPayload): Dashboard {
+  return {
+    ...payload,
+    createdAt: new Date(payload.createdAt),
+    updatedAt: new Date(payload.updatedAt),
+    metadata: payload.metadata ? { ...payload.metadata, tags: payload.metadata.tags ?? [] } : undefined
+  };
+}
+
+export function parseDashboardSummary(payload: DashboardSummaryPayload): DashboardSummary {
+  return {
+    ...payload,
+    createdAt: new Date(payload.createdAt),
+    lastModified: new Date(payload.lastModified),
+    metadata: payload.metadata ? { ...payload.metadata, tags: payload.metadata.tags ?? [] } : undefined
+  };
+}
+
+export function serializeDashboard(dashboard: Dashboard): DashboardPayload {
+  return {
+    ...dashboard,
+    createdAt: dashboard.createdAt.toISOString(),
+    updatedAt: dashboard.updatedAt.toISOString()
+  };
+}
+
+export function serializeDashboardSummary(summary: DashboardSummary): DashboardSummaryPayload {
+  return {
+    ...summary,
+    createdAt: summary.createdAt.toISOString(),
+    lastModified: summary.lastModified.toISOString()
+  };
+}
+
 // Widget Library Items
 export const WIDGET_LIBRARY: WidgetLibraryItem[] = [
-  // Data Widgets
   {
-    id: 'metric-number',
+    id: 'metric-core-kpi',
     type: 'metric',
     category: 'Data',
-    name: 'Metric Number',
-    description: 'Display a single metric with trend indicators',
-    icon: '📊',
+    name: 'Core KPI',
+    description: 'Hero metric with delta and comparison baseline.',
+    icon: '📈',
     defaultSize: 'small',
-    defaultSettings: { format: 'number', showTrend: true, showChange: true },
-    supportedDataTypes: ['number', 'currency', 'percentage'],
+    defaultSettings: { format: 'number', showTrend: true, comparisonWindow: '7d' },
+    supportedDataTypes: ['number', 'percentage'],
     configOptions: [
-      { key: 'format', type: 'select', label: 'Format', required: true, defaultValue: 'number',
-        options: [
-          { label: 'Number', value: 'number' },
-          { label: 'Currency', value: 'currency' },
-          { label: 'Percentage', value: 'percentage' }
-        ]
-      },
-      { key: 'showTrend', type: 'boolean', label: 'Show Trend', required: false, defaultValue: true },
-      { key: 'showChange', type: 'boolean', label: 'Show Change', required: false, defaultValue: true }
+      { key: 'format', type: 'select', label: 'Format', required: true, defaultValue: 'number', options: [
+        { label: 'Number', value: 'number' },
+        { label: 'Currency', value: 'currency' },
+        { label: 'Percentage', value: 'percentage' }
+      ] },
+      { key: 'showTrend', type: 'boolean', label: 'Show Trendline', required: false, defaultValue: true },
+      { key: 'comparisonWindow', type: 'select', label: 'Comparison Window', required: false, defaultValue: '7d', options: [
+        { label: '7 Days', value: '7d' },
+        { label: '14 Days', value: '14d' },
+        { label: '30 Days', value: '30d' }
+      ] }
     ]
   },
   {
-    id: 'chart-line',
+    id: 'viz-timeseries',
     type: 'chart',
     category: 'Visualization',
-    name: 'Line Chart',
-    description: 'Time series line chart with multiple series support',
-    icon: '📈',
+    name: 'Time Series',
+    description: 'Interactive line / area chart with multiple series.',
+    icon: '🕒',
     defaultSize: 'large',
-    defaultSettings: { chartType: 'line', xAxis: 'time', yAxis: 'value', showLegend: true },
+    defaultSettings: { chartType: 'line', stacked: false, smooth: true },
     supportedDataTypes: ['timeseries', 'array'],
     configOptions: [
-      { key: 'chartType', type: 'select', label: 'Chart Type', required: true, defaultValue: 'line',
-        options: [
-          { label: 'Line', value: 'line' },
-          { label: 'Area', value: 'area' },
-          { label: 'Bar', value: 'bar' }
-        ]
-      },
-      { key: 'showLegend', type: 'boolean', label: 'Show Legend', required: false, defaultValue: true },
-      { key: 'xAxis', type: 'string', label: 'X Axis Field', required: true, defaultValue: 'time' },
-      { key: 'yAxis', type: 'string', label: 'Y Axis Field', required: true, defaultValue: 'value' }
+      { key: 'chartType', type: 'select', label: 'Chart Type', required: true, defaultValue: 'line', options: [
+        { label: 'Line', value: 'line' },
+        { label: 'Area', value: 'area' },
+        { label: 'Bar', value: 'bar' }
+      ] },
+      { key: 'stacked', type: 'boolean', label: 'Stack Series', required: false, defaultValue: false },
+      { key: 'smooth', type: 'boolean', label: 'Smooth Curves', required: false, defaultValue: true }
     ]
   },
   {
-    id: 'table-data',
+    id: 'viz-comparison',
+    type: 'chart',
+    category: 'Visualization',
+    name: 'Comparison Bars',
+    description: 'Side-by-side bars for categorical comparisons.',
+    icon: '📊',
+    defaultSize: 'large',
+    defaultSettings: { chartType: 'bar', orientation: 'vertical', showLegend: true },
+    supportedDataTypes: ['array', 'table'],
+    configOptions: [
+      { key: 'orientation', type: 'select', label: 'Orientation', required: true, defaultValue: 'vertical', options: [
+        { label: 'Vertical', value: 'vertical' },
+        { label: 'Horizontal', value: 'horizontal' }
+      ] },
+      { key: 'showLegend', type: 'boolean', label: 'Show Legend', required: false, defaultValue: true }
+    ]
+  },
+  {
+    id: 'table-advanced',
     type: 'table',
     category: 'Data',
-    name: 'Data Table',
-    description: 'Tabular data display with sorting and filtering',
-    icon: '📋',
+    name: 'Advanced Table',
+    description: 'Paginated table with column level filters and pinning.',
+    icon: '🗂️',
     defaultSize: 'xlarge',
-    defaultSettings: { showHeaders: true, sortable: true, filterable: true, pagination: true },
+    defaultSettings: { showHeaders: true, filterable: true, pagination: true, pageSize: 20 },
     supportedDataTypes: ['table', 'array'],
     configOptions: [
-      { key: 'showHeaders', type: 'boolean', label: 'Show Headers', required: false, defaultValue: true },
-      { key: 'sortable', type: 'boolean', label: 'Sortable Columns', required: false, defaultValue: true },
-      { key: 'filterable', type: 'boolean', label: 'Filterable', required: false, defaultValue: true },
+      { key: 'filterable', type: 'boolean', label: 'Enable Filters', required: false, defaultValue: true },
       { key: 'pagination', type: 'boolean', label: 'Pagination', required: false, defaultValue: true },
-      { key: 'pageSize', type: 'number', label: 'Page Size', required: false, defaultValue: 25, min: 5, max: 100 }
+      { key: 'pageSize', type: 'number', label: 'Rows per page', required: false, defaultValue: 20, min: 5, max: 100 }
     ]
   },
   {
-    id: 'text-content',
+    id: 'kanban-flow',
+    type: 'kanban',
+    category: 'Operations',
+    name: 'Kanban Flow',
+    description: 'Column-based board for operational throughput tracking.',
+    icon: '🗂',
+    defaultSize: 'xlarge',
+    defaultSettings: { swimlanes: false, showTotals: true },
+    supportedDataTypes: ['array', 'object'],
+    configOptions: [
+      { key: 'swimlanes', type: 'boolean', label: 'Enable Swimlanes', required: false, defaultValue: false },
+      { key: 'showTotals', type: 'boolean', label: 'Show Totals', required: false, defaultValue: true }
+    ]
+  },
+  {
+    id: 'ai-summary',
     type: 'text',
-    category: 'Content',
-    name: 'Rich Text',
-    description: 'Rich text content with markdown support',
-    icon: '📝',
+    category: 'AI',
+    name: 'AI Insight',
+    description: 'LLM-generated summary block with contextual metadata.',
+    icon: '🤖',
     defaultSize: 'medium',
-    defaultSettings: { content: '# Heading\n\nContent here...', markdown: true },
+    defaultSettings: { tone: 'analytical', includeSources: true },
     supportedDataTypes: ['string', 'markdown'],
     configOptions: [
-      { key: 'content', type: 'string', label: 'Content', required: true, defaultValue: '# Heading\n\nContent here...' },
-      { key: 'markdown', type: 'boolean', label: 'Enable Markdown', required: false, defaultValue: true }
+      { key: 'tone', type: 'select', label: 'Tone', required: false, defaultValue: 'analytical', options: [
+        { label: 'Analytical', value: 'analytical' },
+        { label: 'Causal', value: 'causal' },
+        { label: 'Narrative', value: 'narrative' }
+      ] },
+      { key: 'includeSources', type: 'boolean', label: 'Include Sources', required: false, defaultValue: true }
     ]
   },
   {
-    id: 'progress-bar',
-    type: 'progress',
-    category: 'Data',
-    name: 'Progress Bar',
-    description: 'Visual progress indicator with percentage',
-    icon: '📊',
-    defaultSize: 'medium',
-    defaultSettings: { min: 0, max: 100, current: 75, showPercentage: true, color: '#22c55e' },
-    supportedDataTypes: ['number', 'percentage'],
-    configOptions: [
-      { key: 'min', type: 'number', label: 'Minimum', required: true, defaultValue: 0 },
-      { key: 'max', type: 'number', label: 'Maximum', required: true, defaultValue: 100 },
-      { key: 'current', type: 'number', label: 'Current Value', required: true, defaultValue: 75 },
-      { key: 'showPercentage', type: 'boolean', label: 'Show Percentage', required: false, defaultValue: true },
-      { key: 'color', type: 'color', label: 'Color', required: false, defaultValue: '#22c55e' }
-    ]
-  },
-  {
-    id: 'status-indicator',
+    id: 'status-grid',
     type: 'status',
     category: 'Utility',
-    name: 'Status Indicator',
-    description: 'Status indicator with color coding',
-    icon: '🔴',
-    defaultSize: 'small',
-    defaultSettings: { status: 'operational', showLabel: true, color: '#22c55e' },
-    supportedDataTypes: ['string', 'status'],
+    name: 'Status Grid',
+    description: 'Compact status tile matrix for service health.',
+    icon: '🟢',
+    defaultSize: 'medium',
+    defaultSettings: { layout: 'grid', columns: 3 },
+    supportedDataTypes: ['array', 'status'],
     configOptions: [
-      { key: 'status', type: 'select', label: 'Status', required: true, defaultValue: 'operational',
-        options: [
-          { label: 'Operational', value: 'operational' },
-          { label: 'Warning', value: 'warning' },
-          { label: 'Critical', value: 'critical' },
-          { label: 'Maintenance', value: 'maintenance' },
-          { label: 'Offline', value: 'offline' }
-        ]
-      },
-      { key: 'showLabel', type: 'boolean', label: 'Show Label', required: false, defaultValue: true },
-      { key: 'color', type: 'color', label: 'Color', required: false, defaultValue: '#22c55e' }
+      { key: 'columns', type: 'number', label: 'Columns', required: false, defaultValue: 3, min: 1, max: 6 },
+      { key: 'layout', type: 'select', label: 'Layout', required: true, defaultValue: 'grid', options: [
+        { label: 'Grid', value: 'grid' },
+        { label: 'List', value: 'list' }
+      ] }
     ]
   },
   {
-    id: 'gauge-chart',
+    id: 'progress-radial',
     type: 'gauge',
     category: 'Visualization',
-    name: 'Gauge Chart',
-    description: 'Circular gauge with needle indicator',
+    name: 'Radial Goal',
+    description: 'Circular progress indicator showcasing goal attainment.',
     icon: '🎯',
     defaultSize: 'medium',
-    defaultSettings: { min: 0, max: 100, current: 75, color: '#3b82f6', showValue: true },
+    defaultSettings: { min: 0, max: 100, current: 72, showValue: true },
     supportedDataTypes: ['number', 'percentage'],
     configOptions: [
-      { key: 'min', type: 'number', label: 'Minimum', required: true, defaultValue: 0 },
       { key: 'max', type: 'number', label: 'Maximum', required: true, defaultValue: 100 },
-      { key: 'current', type: 'number', label: 'Current Value', required: true, defaultValue: 75 },
-      { key: 'color', type: 'color', label: 'Color', required: false, defaultValue: '#3b82f6' },
       { key: 'showValue', type: 'boolean', label: 'Show Value', required: false, defaultValue: true }
-    ]
-  },
-  {
-    id: 'list-widget',
-    type: 'list',
-    category: 'Content',
-    name: 'List Widget',
-    description: 'Ordered or unordered list display',
-    icon: '📜',
-    defaultSize: 'medium',
-    defaultSettings: { items: ['Item 1', 'Item 2', 'Item 3'], ordered: false, bulletColor: '#6c5ce7' },
-    supportedDataTypes: ['array', 'list'],
-    configOptions: [
-      { key: 'items', type: 'string', label: 'Items (comma-separated)', required: true, defaultValue: 'Item 1, Item 2, Item 3' },
-      { key: 'ordered', type: 'boolean', label: 'Ordered List', required: false, defaultValue: false },
-      { key: 'bulletColor', type: 'color', label: 'Bullet Color', required: false, defaultValue: '#6c5ce7' }
     ]
   }
 ];
@@ -319,6 +460,8 @@ export function createWidgetFromLibrary(
       width: WIDGET_SIZES[libraryItem.defaultSize].width,
       height: WIDGET_SIZES[libraryItem.defaultSize].height
     },
-    settings: { ...libraryItem.defaultSettings }
+    settings: { ...libraryItem.defaultSettings },
+    style: {},
+    filters: []
   };
 }

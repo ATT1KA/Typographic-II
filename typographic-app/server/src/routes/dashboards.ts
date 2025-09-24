@@ -20,10 +20,14 @@ interface Dashboard {
     gap?: number;
     theme?: 'dark' | 'light' | 'auto';
     refreshInterval?: number;
+    density?: 'comfortable' | 'compact' | 'cozy';
+    showGrid?: boolean;
+    snapToGrid?: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
+  metadata?: DashboardMetadata;
 }
 
 interface WidgetConfig {
@@ -40,6 +44,7 @@ interface WidgetConfig {
     endpoint?: string;
     refreshInterval?: number;
   };
+  refreshInterval?: number;
   settings: Record<string, any>;
   style?: {
     backgroundColor?: string;
@@ -47,7 +52,20 @@ interface WidgetConfig {
     textColor?: string;
     borderRadius?: number;
     opacity?: number;
+    elevation?: number;
+    accentColor?: string;
   };
+  visual?: {
+    type?: string;
+    variant?: string;
+    palette?: string;
+    options?: Record<string, any>;
+  };
+  filters?: Array<{
+    field: string;
+    operator: string;
+    value: unknown;
+  }>;
 }
 
 interface WorkflowConnection {
@@ -68,25 +86,50 @@ interface DashboardSummary {
   lastModified: Date;
   createdAt: Date;
   connectedWorkflows: string[];
+  metadata?: DashboardMetadata;
+}
+
+interface DashboardMetadata {
+  icon?: string;
+  color?: string;
+  tags?: string[];
+  owner?: string;
+  defaultWorkflowId?: string;
+  lastViewedWorkflowId?: string;
 }
 
 import * as z from 'zod';
 
 // Validation schemas
 const DashboardSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  layout: z.enum(['grid', 'masonry', 'flexbox']),
-  widgets: z.array(z.any()),
+  layout: z.enum(['grid', 'masonry', 'flexbox']).default('grid'),
+  widgets: z.array(z.any()).default([]),
   settings: z.object({
     backgroundColor: z.string().optional(),
     backgroundImage: z.string().optional(),
     gridSize: z.number().min(12).max(100).optional(),
     gap: z.number().min(0).max(50).optional(),
     theme: z.enum(['dark', 'light', 'auto']).optional(),
-    refreshInterval: z.number().min(10).max(3600).optional()
-  })
-});
+    refreshInterval: z.number().min(10).max(3600).optional(),
+    density: z.enum(['comfortable', 'compact', 'cozy']).optional(),
+    showGrid: z.boolean().optional(),
+    snapToGrid: z.boolean().optional()
+  }).default({}),
+  createdAt: z.union([z.string(), z.date()]).optional(),
+  updatedAt: z.union([z.string(), z.date()]).optional(),
+  createdBy: z.string().optional(),
+  metadata: z.object({
+    icon: z.string().optional(),
+    color: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    owner: z.string().optional(),
+    defaultWorkflowId: z.string().optional(),
+    lastViewedWorkflowId: z.string().optional()
+  }).optional()
+}).passthrough();
 
 const WidgetSchema = z.object({
   id: z.string(),
@@ -107,15 +150,32 @@ const WidgetSchema = z.object({
     endpoint: z.string().optional(),
     refreshInterval: z.number().optional()
   }).optional(),
-  settings: z.object({}).catchall(z.any()),
+  refreshInterval: z.number().optional(),
+  settings: z.record(z.string(), z.any()).default({}),
   style: z.object({
     backgroundColor: z.string().optional(),
     borderColor: z.string().optional(),
     textColor: z.string().optional(),
     borderRadius: z.number().optional(),
-    opacity: z.number().optional()
-  }).optional()
-});
+    opacity: z.number().optional(),
+    elevation: z.number().optional(),
+    accentColor: z.string().optional()
+  }).optional(),
+  visual: z.object({
+    type: z.string().optional(),
+    variant: z.string().optional(),
+    palette: z.string().optional(),
+    options: z.record(z.string(), z.any()).optional()
+  }).optional(),
+  filters: z.array(z.object({
+    id: z.string().optional(),
+    label: z.string().optional(),
+    field: z.string(),
+    operator: z.string(),
+    value: z.any(),
+    enabled: z.boolean().optional()
+  })).optional()
+}).passthrough();
 
 const ConnectionSchema = z.object({
   dashboardId: z.string(),
@@ -144,6 +204,126 @@ function generateId(): string {
   return `dash_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
+function toDate(value?: string | Date): Date {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function normalizeWidget(raw: any): WidgetConfig {
+  const widget = WidgetSchema.parse(raw);
+  return {
+    ...widget,
+    position: {
+      x: Number(widget.position?.x ?? 0),
+      y: Number(widget.position?.y ?? 0),
+      width: Number(widget.position?.width ?? 2),
+      height: Number(widget.position?.height ?? 2)
+    },
+    settings: widget.settings ?? {},
+    filters: widget.filters ?? [],
+    style: widget.style ?? {},
+    visual: widget.visual ?? undefined,
+    dataSource: widget.dataSource ? {
+      ...widget.dataSource,
+      refreshInterval: widget.dataSource.refreshInterval ?? undefined
+    } : undefined
+  };
+}
+
+function ensureMetadata(meta?: DashboardMetadata): DashboardMetadata {
+  return {
+    icon: meta?.icon,
+    color: meta?.color,
+    tags: Array.isArray(meta?.tags) ? meta!.tags : [],
+    owner: meta?.owner,
+    defaultWorkflowId: meta?.defaultWorkflowId ?? 'default',
+    lastViewedWorkflowId: meta?.lastViewedWorkflowId ?? meta?.defaultWorkflowId ?? 'default'
+  };
+}
+
+function ensureSettings(settings?: Dashboard['settings']): Dashboard['settings'] {
+  return {
+    backgroundColor: settings?.backgroundColor ?? '#1b1b1b',
+    backgroundImage: settings?.backgroundImage,
+    gridSize: settings?.gridSize ?? 48,
+    gap: settings?.gap ?? 12,
+    theme: settings?.theme ?? 'dark',
+    refreshInterval: settings?.refreshInterval ?? 60,
+    density: settings?.density ?? 'comfortable',
+    showGrid: settings?.showGrid ?? true,
+    snapToGrid: settings?.snapToGrid ?? true
+  };
+}
+
+function normalizeDashboard(raw: any): Dashboard {
+  const parsed = DashboardSchema.parse(raw);
+  const widgets = Array.isArray(parsed.widgets)
+    ? parsed.widgets.map(normalizeWidget)
+    : [];
+
+  return {
+    id: parsed.id ?? generateId(),
+    name: parsed.name,
+    description: parsed.description,
+    layout: parsed.layout ?? 'grid',
+    widgets,
+    settings: ensureSettings(parsed.settings),
+    createdAt: toDate(parsed.createdAt),
+    updatedAt: toDate(parsed.updatedAt),
+    createdBy: parsed.createdBy,
+    metadata: ensureMetadata(parsed.metadata)
+  };
+}
+
+type DashboardRecord = Omit<Dashboard, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+type DashboardSummaryRecord = {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  lastModified: string;
+  createdAt: string;
+  connectedWorkflows: string[];
+  metadata?: DashboardMetadata;
+};
+
+function serializeDashboard(dashboard: Dashboard): DashboardRecord {
+  return {
+    ...dashboard,
+    widgets: dashboard.widgets.map((widget) => ({
+      ...widget,
+      filters: widget.filters ?? [],
+      settings: widget.settings ?? {},
+      style: widget.style ?? {},
+      position: { ...widget.position }
+    })),
+    settings: { ...dashboard.settings },
+    metadata: dashboard.metadata ? { ...dashboard.metadata, tags: [...(dashboard.metadata.tags ?? [])] } : undefined,
+    createdAt: dashboard.createdAt.toISOString(),
+    updatedAt: dashboard.updatedAt.toISOString()
+  };
+}
+
+function serializeSummary(dashboard: Dashboard): DashboardSummaryRecord {
+  const summary = getDashboardSummary(dashboard);
+  return {
+    id: summary.id,
+    name: summary.name,
+    description: summary.description,
+    widgetCount: summary.widgetCount,
+    lastModified: summary.lastModified.toISOString(),
+    createdAt: summary.createdAt.toISOString(),
+    connectedWorkflows: summary.connectedWorkflows,
+    metadata: summary.metadata ? { ...summary.metadata, tags: [...(summary.metadata.tags ?? [])] } : undefined
+  };
+}
+
 function getDashboardSummary(dashboard: Dashboard): DashboardSummary {
   const dashboardConnections = Array.from(connections.values())
     .filter(conn => conn.dashboardId === dashboard.id);
@@ -155,20 +335,22 @@ function getDashboardSummary(dashboard: Dashboard): DashboardSummary {
     widgetCount: dashboard.widgets.length,
     lastModified: dashboard.updatedAt,
     createdAt: dashboard.createdAt,
-    connectedWorkflows: [...new Set(dashboardConnections.map(conn => conn.workflowId))]
+    connectedWorkflows: [...new Set(dashboardConnections.map(conn => conn.workflowId))],
+    metadata: ensureMetadata(dashboard.metadata)
   };
 }
 
 async function saveDashboardToFile(dashboard: Dashboard) {
   const filePath = path.join(dataDirectory, `${dashboard.id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(dashboard, null, 2));
+  await fs.writeFile(filePath, JSON.stringify(serializeDashboard(dashboard), null, 2));
 }
 
 async function loadDashboardFromFile(id: string): Promise<Dashboard | undefined> {
   try {
     const filePath = path.join(dataDirectory, `${id}.json`);
     const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    return normalizeDashboard(parsed);
   } catch {
     return undefined;
   }
@@ -182,11 +364,11 @@ ensureDataDirectory().catch(console.error);
 // GET /api/dashboards - List all dashboards (with summaries)
 dashboardsRouter.get('/', async (_req, res) => {
   try {
-    const summaries: DashboardSummary[] = [];
+    const summaries: DashboardSummaryRecord[] = [];
 
     // Load from memory first
     for (const dashboard of dashboards.values()) {
-      summaries.push(getDashboardSummary(dashboard));
+      summaries.push(serializeSummary(dashboard));
     }
 
     // Load from files if not in memory
@@ -198,14 +380,14 @@ dashboardsRouter.get('/', async (_req, res) => {
           const dashboard = await loadDashboardFromFile(id);
           if (dashboard) {
             dashboards.set(id, dashboard);
-            summaries.push(getDashboardSummary(dashboard));
+            summaries.push(serializeSummary(dashboard));
           }
         }
       }
     }
 
     // Sort by last modified
-    summaries.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+    summaries.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
 
     res.json(summaries);
   } catch (error) {
@@ -234,7 +416,7 @@ dashboardsRouter.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Dashboard not found' });
     }
 
-    res.json(dashboard);
+    res.json(serializeDashboard(dashboard));
   } catch (error) {
     console.error('Error getting dashboard:', error);
     res.status(500).json({ error: 'Failed to get dashboard' });
@@ -244,25 +426,21 @@ dashboardsRouter.get('/:id', async (req, res) => {
 // POST /api/dashboards - Create new dashboard
 dashboardsRouter.post('/', async (req, res) => {
   try {
-    const validatedData = DashboardSchema.parse(req.body);
+    const payload = DashboardSchema.parse(req.body);
     const now = new Date();
 
-    const dashboard: Dashboard = {
-      id: generateId(),
-      name: validatedData.name,
-      description: validatedData.description,
-      layout: validatedData.layout,
-      widgets: validatedData.widgets || [],
-      settings: validatedData.settings,
+    const dashboard: Dashboard = normalizeDashboard({
+      ...payload,
+      id: payload.id ?? generateId(),
       createdAt: now,
       updatedAt: now,
       createdBy: req.headers['user-id'] as string || 'anonymous'
-    };
+    });
 
     dashboards.set(dashboard.id, dashboard);
     await saveDashboardToFile(dashboard);
 
-    res.status(201).json(getDashboardSummary(dashboard));
+    res.status(201).json(serializeDashboard(dashboard));
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: 'Invalid dashboard data', details: error.issues });
@@ -277,7 +455,7 @@ dashboardsRouter.post('/', async (req, res) => {
 dashboardsRouter.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const validatedData = DashboardSchema.parse(req.body);
+    const payload = DashboardSchema.parse(req.body);
 
     let dashboard = dashboards.get(id);
     if (!dashboard) {
@@ -287,18 +465,18 @@ dashboardsRouter.put('/:id', async (req, res) => {
       }
     }
 
-    // Update dashboard
-    dashboard.name = validatedData.name;
-    dashboard.description = validatedData.description;
-    dashboard.layout = validatedData.layout;
-    dashboard.widgets = validatedData.widgets || [];
-    dashboard.settings = validatedData.settings;
-    dashboard.updatedAt = new Date();
+    const nextDashboard: Dashboard = normalizeDashboard({
+      ...dashboard,
+      ...payload,
+      id,
+      createdAt: dashboard.createdAt,
+      updatedAt: new Date()
+    });
 
-    dashboards.set(id, dashboard);
-    await saveDashboardToFile(dashboard);
+    dashboards.set(id, nextDashboard);
+    await saveDashboardToFile(nextDashboard);
 
-    res.json(getDashboardSummary(dashboard));
+    res.json(serializeDashboard(nextDashboard));
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ error: 'Invalid dashboard data', details: error.issues });
