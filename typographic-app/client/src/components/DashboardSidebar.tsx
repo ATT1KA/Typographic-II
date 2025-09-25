@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Search, X, ChevronRight, ChevronDown, Zap, Database } from 'lucide-react';
 import {
   Dashboard,
@@ -35,8 +35,8 @@ interface DashboardSidebarProps {
 }
 
 const SIDEBAR_WIDTH = 340;
-const PREEXPANDED_CATEGORIES = new Set<string>(['Data', 'Visualization', 'Content', 'Utility']);
-
+const APP_HEADER_HEIGHT = 84;
+const TOGGLE_VERTICAL_CENTER = `calc(${APP_HEADER_HEIGHT}px + (100vh - ${APP_HEADER_HEIGHT}px) / 2)`;
 export default function DashboardSidebar({
   isOpen,
   onToggle,
@@ -49,8 +49,6 @@ export default function DashboardSidebar({
   workflowOutputs,
   workflowOutputsLoading
 }: DashboardSidebarProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(PREEXPANDED_CATEGORIES));
-
   const widgetsByCategory = useMemo<WidgetLibraryByCategory>(() => {
     const grouped: WidgetLibraryByCategory = {};
     const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -70,18 +68,6 @@ export default function DashboardSidebar({
     return grouped;
   }, [searchQuery]);
 
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
-        next.add(category);
-      }
-      return next;
-    });
-  };
-
   const handleWidgetClick = (widgetType: WidgetType) => {
     const canvasRect = document.querySelector('.dashboard-canvas')?.getBoundingClientRect();
     const grid = dashboard.settings.gridSize || 48;
@@ -98,6 +84,16 @@ export default function DashboardSidebar({
     });
   };
 
+  const activeWidgets = widgetsByCategory[selectedCategory] ?? [];
+  const hasResults = activeWidgets.length > 0;
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const category of WIDGET_CATEGORIES) {
+      counts[category] = widgetsByCategory[category]?.length ?? 0;
+    }
+    return counts;
+  }, [widgetsByCategory]);
+
   return (
     <>
       <button
@@ -106,7 +102,7 @@ export default function DashboardSidebar({
         style={{
           position: 'fixed',
           left: isOpen ? `${SIDEBAR_WIDTH}px` : '0',
-          top: '50%',
+          top: TOGGLE_VERTICAL_CENTER,
           transform: 'translateY(-50%)',
           width: 28,
           height: 56,
@@ -130,26 +126,35 @@ export default function DashboardSidebar({
         className="dashboard-sidebar"
         style={{
           position: 'fixed',
-          inset: '0 auto 0 0',
+          top: APP_HEADER_HEIGHT,
+          bottom: 0,
+          left: 0,
           width: isOpen ? `${SIDEBAR_WIDTH}px` : '0px',
-          background: 'rgba(15, 15, 18, 0.86)',
-          borderRight: '1px solid var(--control-border)',
+          background: 'transparent',
+          borderRight: isOpen ? '1px solid var(--control-border)' : 'none',
           overflow: 'hidden',
           transition: 'width 0.18s ease',
           zIndex: 170,
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)'
+          pointerEvents: isOpen ? 'auto' : 'none'
         }}
       >
-        <div style={{
-          width: `${SIDEBAR_WIDTH}px`,
-          height: '100%',
-          display: 'grid',
-          gridTemplateRows: 'auto auto 1fr auto',
-          background: 'linear-gradient(180deg, rgba(19,19,22,0.95), rgba(16,16,18,0.96))'
-        }}>
+        <div
+          style={{
+            width: `${SIDEBAR_WIDTH}px`,
+            height: '100%',
+            display: 'grid',
+            gridTemplateRows: 'auto auto 1fr auto',
+            background: 'linear-gradient(180deg, rgba(19,19,22,0.9), rgba(15,15,18,0.94))',
+            boxSizing: 'border-box',
+            borderRight: '1px solid var(--control-border)',
+            boxShadow: '0 18px 44px rgba(0,0,0,0.42)',
+            backdropFilter: 'blur(18px) saturate(135%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(135%)',
+            pointerEvents: 'auto'
+          }}
+        >
           <header style={{
-            padding: '20px 20px 12px 20px',
+            padding: '20px 20px 12px 24px',
             borderBottom: '1px solid var(--control-border)',
             display: 'flex',
             alignItems: 'center',
@@ -178,7 +183,7 @@ export default function DashboardSidebar({
             </button>
           </header>
 
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--control-border)', display: 'grid', gap: 12 }}>
+          <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--control-border)', display: 'grid', gap: 14 }}>
             <div style={{ position: 'relative' }}>
               <Search size={14} style={{
                 position: 'absolute',
@@ -203,24 +208,18 @@ export default function DashboardSidebar({
                 }}
               />
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {WIDGET_CATEGORIES.map(category => {
-                const active = category === selectedCategory;
+            <div className="lib-tabs">
+              {WIDGET_CATEGORIES.map((category) => {
+                const isActive = category === selectedCategory;
                 return (
                   <button
                     key={category}
+                    className={`lib-tab ${isActive ? 'active' : ''}`}
                     onClick={() => onCategoryChange(category)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      border: `1px solid ${active ? 'var(--accent)' : 'var(--control-border)'}`,
-                      background: active ? 'rgba(108,92,231,0.18)' : 'var(--control-bg)',
-                      color: active ? 'var(--text)' : 'var(--muted)',
-                      fontSize: 11,
-                      fontFamily: 'var(--font-mono)'
-                    }}
+                    title={`${category} widgets`}
                   >
-                    {category}
+                    <span className="lib-tab-label">{category}</span>
+                    <span className="lib-tab-count">{categoryCounts[category] ?? 0}</span>
                   </button>
                 );
               })}
@@ -228,92 +227,48 @@ export default function DashboardSidebar({
           </div>
 
           <div style={{
-            flex: 1,
-            overflow: 'auto',
-            padding: '12px 16px 16px 16px',
-            display: 'grid',
-            gap: 12
+            padding: '16px 20px 20px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            overflow: 'hidden'
           }}>
-            {Object.entries(widgetsByCategory).length === 0 ? (
+            {!hasResults ? (
               <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 32 }}>
                 No widgets found
               </div>
             ) : (
-              Object.entries(widgetsByCategory).map(([category, widgets]) => {
-                const expanded = expandedCategories.has(category);
-                return (
-                  <section key={category} style={{
-                    border: '1px solid var(--control-border)',
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                    background: 'rgba(21,21,24,0.92)',
-                    boxShadow: '0 8px 22px rgba(0,0,0,0.32)'
-                  }}>
+              <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
+                <div className="rail-list" style={{ marginTop: 0, gap: 14 }}>
+                  {activeWidgets.map((widget) => (
                     <button
-                      onClick={() => toggleCategory(category)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: 'rgba(17,17,19,0.82)',
-                        border: 'none',
-                        color: 'var(--text)'
-                      }}
+                      key={widget.id}
+                      className="rail-item widget-card"
+                      onClick={() => handleWidgetClick(widget.type)}
+                      title={widget.description}
                     >
-                      <span style={{ fontSize: 12, letterSpacing: 0.4 }}>{category}</span>
-                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>{widgets.length}</span>
-                    </button>
-                    {expanded && (
-                      <div style={{ display: 'grid', gap: 10, padding: '12px 12px 12px 12px' }}>
-                        {widgets.map(widget => (
-                          <article
-                            key={widget.id}
-                            onClick={() => handleWidgetClick(widget.type)}
-                            style={{
-                              border: '1px solid var(--control-border)',
-                              borderRadius: 8,
-                              padding: 12,
-                              background: 'rgba(15,15,17,0.86)',
-                              cursor: 'pointer',
-                              transition: 'border 120ms ease, transform 120ms ease'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{ fontSize: 18 }}>{widget.icon}</span>
-                                <div>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{widget.name}</div>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{widget.description}</div>
-                                </div>
-                              </div>
-                              <span style={{
-                                padding: '2px 6px',
-                                borderRadius: 999,
-                                border: '1px solid var(--control-border)',
-                                fontSize: 10,
-                                color: 'var(--muted)'
-                              }}>{widget.defaultSize}</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 10, color: 'var(--muted)' }}>
-                              <span>Supports: {widget.supportedDataTypes.join(', ')}</span>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <Zap size={12} /> {widget.type}
-                              </span>
-                            </div>
-                          </article>
-                        ))}
+                      <div className="widget-card-main">
+                        <span className="widget-card-icon">{widget.icon}</span>
+                        <div className="widget-card-copy">
+                          <span className="widget-card-title">{widget.name}</span>
+                          <span className="widget-card-description">{widget.description}</span>
+                        </div>
                       </div>
-                    )}
-                  </section>
-                );
-              })
+                      <div className="widget-card-meta">
+                        <span className="widget-card-size">{widget.defaultSize}</span>
+                        <span className="widget-card-type">
+                          <Zap size={12} /> {widget.type}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
           <footer style={{
-            padding: '14px 18px 18px 18px',
+            padding: '16px 22px 20px 24px',
             borderTop: '1px solid var(--control-border)',
             display: 'grid',
             gap: 12,
@@ -362,7 +317,10 @@ export default function DashboardSidebar({
         <div
           style={{
             position: 'fixed',
-            inset: 0,
+            top: APP_HEADER_HEIGHT,
+            left: 0,
+            right: 0,
+            bottom: 0,
             background: 'rgba(0,0,0,0.42)',
             zIndex: 90,
             display: window.innerWidth <= 900 ? 'block' : 'none'
@@ -373,3 +331,4 @@ export default function DashboardSidebar({
     </>
   );
 }
+

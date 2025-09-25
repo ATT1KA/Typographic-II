@@ -91,6 +91,79 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.12) inset !important;
 }
 .flow-surface { margin: 0; border-radius: 0; background: var(--bg); border: none; box-shadow: none; position: relative; overflow: visible; padding-bottom: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+.dashboard-page {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: padding-left 0.18s ease;
+}
+
+.dashboard-page.sidebar-open {
+  padding-left: 340px;
+}
+
+.dashboard-page.sidebar-closed {
+  padding-left: 0;
+}
+
+.widget-card {
+  align-items: stretch;
+  padding: 14px 16px;
+  gap: 16px;
+}
+
+.widget-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.widget-card-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+.widget-card-copy {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.widget-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.widget-card-description {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.widget-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.widget-card-size {
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.widget-card-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .workflow-page {
   width: 100%;
   height: 100%;
@@ -229,6 +302,44 @@
 .rail-panel details > summary:focus-visible {
   outline: none !important;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08) inset !important;
+}
+.rail-panel::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+.rail-panel::-webkit-scrollbar-track {
+  background: rgba(20,20,20,0.45);
+  border-radius: 3px;
+}
+.rail-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(36,36,36,0.95), rgba(28,28,28,0.92));
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.45) inset, 0 1px 0 rgba(255,255,255,0.02);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+}
+.rail-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(46,46,46,0.98), rgba(32,32,32,0.96));
+}
+.rail-panel::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+.rail-panel::-webkit-scrollbar-track {
+  background: rgba(20,20,20,0.45);
+  border-radius: 3px;
+}
+.rail-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(36,36,36,0.95), rgba(28,28,28,0.92));
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.45) inset, 0 1px 0 rgba(255,255,255,0.02);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+}
+.rail-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(46,46,46,0.98), rgba(32,32,32,0.96));
 }
 .rail-section summary::-webkit-details-marker { display: none; }
 .rail-list { display: grid; gap: 8px; margin-top: 8px; }
@@ -697,13 +808,10 @@
   cursor: e-resize;
 }
 
-/* Dashboard Sidebar Styles */
+/* Dashboard Sidebar Shell */
 .dashboard-sidebar {
-  background: var(--bg-elev);
-  border-right: 1px solid var(--control-border);
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .sidebar-toggle {

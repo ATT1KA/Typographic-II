@@ -729,7 +729,7 @@ export default function DashboardBuilder() {
   }
 
   return (
-    <div style={{
+    <div className={`dashboard-page ${sidebarState.isOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{
       height: '100%',
       display: 'flex',
       background: 'radial-gradient(1200px 600px at 80% -10%, rgba(108,92,231,0.08), transparent 40%), radial-gradient(800px 400px at -10% 110%, rgba(0,184,148,0.07), transparent 45%), var(--bg)',
@@ -808,9 +808,9 @@ export default function DashboardBuilder() {
               color: 'var(--muted)'
             }}>
               No dashboard selected
-            </div>
+      </div>
           )}
-        </div>
+          </div>
       </div>
 
       {renderDashboardMenu()}

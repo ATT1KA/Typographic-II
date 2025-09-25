@@ -4,7 +4,7 @@
       "id": "fundraising-screening",
       "position": {
         "x": -744,
-        "y": -888
+        "y": -936
       },
       "type": "custom",
       "data": {
@@ -22,12 +22,13 @@
       },
       "measured": {
         "width": 288,
-        "height": 528
+        "height": 912
       },
       "selected": false,
       "dragging": true,
       "width": 288,
-      "height": 528
+      "height": 912,
+      "resizing": false
     },
     {
       "id": "sci-shipping",
@@ -179,18 +180,18 @@
       },
       "measured": {
         "width": 288,
-        "height": 144
+        "height": 96
       },
       "selected": false,
       "dragging": true,
       "width": 288,
-      "height": 144
+      "height": 96
     },
     {
       "id": "output-report-compiler-1758441361913",
       "position": {
-        "x": 744,
-        "y": -696
+        "x": 696,
+        "y": -600
       },
       "type": "custom",
       "data": {
@@ -204,11 +205,13 @@
         }
       },
       "measured": {
-        "width": 300,
-        "height": 115
+        "width": 288,
+        "height": 96
       },
-      "selected": false,
-      "dragging": true
+      "selected": true,
+      "dragging": true,
+      "width": 288,
+      "height": 96
     }
   ],
   "edges": [
@@ -388,6 +391,50 @@
         "kind": "data"
       },
       "id": "xy-edge__bi-market-volatilitydata-out-output-dashboard-generator-1758362373789data-in"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#e05555",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#e05555"
+      },
+      "source": "connectivity-causal-router-1758355003726",
+      "sourceHandle": "meta-out",
+      "target": "output-report-compiler-1758441361913",
+      "targetHandle": "meta-in",
+      "data": {
+        "kind": "meta"
+      },
+      "id": "xy-edge__connectivity-causal-router-1758355003726meta-out-output-report-compiler-1758441361913meta-in"
+    },
+    {
+      "type": "bezier",
+      "animated": true,
+      "style": {
+        "stroke": "#9a9a9a",
+        "strokeWidth": 2,
+        "strokeLinecap": "round",
+        "strokeLinejoin": "round"
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#9a9a9a"
+      },
+      "source": "connectivity-causal-router-1758355003726",
+      "sourceHandle": "data-out",
+      "target": "output-report-compiler-1758441361913",
+      "targetHandle": "data-in",
+      "data": {
+        "kind": "data"
+      },
+      "id": "xy-edge__connectivity-causal-router-1758355003726data-out-output-report-compiler-1758441361913data-in"
     }
   ]
 }

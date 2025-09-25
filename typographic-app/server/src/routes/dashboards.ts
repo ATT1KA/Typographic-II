@@ -30,6 +30,15 @@ interface Dashboard {
   metadata?: DashboardMetadata;
 }
 
+interface WidgetFilter {
+  id?: string;
+  label?: string;
+  field: string;
+  operator: string;
+  value: unknown;
+  enabled?: boolean;
+}
+
 interface WidgetConfig {
   id: string;
   type: string;
@@ -61,11 +70,7 @@ interface WidgetConfig {
     palette?: string;
     options?: Record<string, any>;
   };
-  filters?: Array<{
-    field: string;
-    operator: string;
-    value: unknown;
-  }>;
+  filters?: WidgetFilter[];
 }
 
 interface WorkflowConnection {
@@ -222,7 +227,12 @@ function normalizeWidget(raw: any): WidgetConfig {
       height: Number(widget.position?.height ?? 2)
     },
     settings: widget.settings ?? {},
-    filters: widget.filters ?? [],
+    filters: widget.filters
+      ? widget.filters.map(filter => ({
+          ...filter,
+          value: filter.value ?? null
+        }))
+      : [],
     style: widget.style ?? {},
     visual: widget.visual ?? undefined,
     dataSource: widget.dataSource ? {
@@ -606,7 +616,7 @@ dashboardsRouter.delete('/:id/connections/:widgetId', async (req, res) => {
 dashboardsRouter.post('/:id/widgets', async (req, res) => {
   try {
     const { id } = req.params;
-    const widgetData = WidgetSchema.parse(req.body);
+    const widgetData = normalizeWidget(req.body);
 
     let dashboard = dashboards.get(id);
     if (!dashboard) {
@@ -643,7 +653,7 @@ dashboardsRouter.post('/:id/widgets', async (req, res) => {
 dashboardsRouter.put('/:id/widgets/:widgetId', async (req, res) => {
   try {
     const { id, widgetId } = req.params;
-    const widgetData = WidgetSchema.parse(req.body);
+    const widgetData = normalizeWidget(req.body);
 
     let dashboard = dashboards.get(id);
     if (!dashboard) {
@@ -696,7 +706,7 @@ dashboardsRouter.delete('/:id/widgets/:widgetId', async (req, res) => {
     dashboard.widgets.splice(widgetIndex, 1);
     dashboard.updatedAt = new Date();
 
-    dashboards.set(id, dashboard);
+  dashboards.set(id, dashboard);
     await saveDashboardToFile(dashboard);
 
     // Remove associated connections

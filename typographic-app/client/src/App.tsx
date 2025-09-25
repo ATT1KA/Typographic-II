@@ -15,7 +15,7 @@ function App() {
   const routes = [
     { path: '/', component: Home },
     { path: '/graph', component: GraphView },
-    { path: '/dashboard', component: DashboardBuilder },
+    { path: '/dashboards', component: DashboardBuilder },
     { path: '/workflow', component: WorkflowBuilder },
     { path: '/explorer', component: Explorer },
     { path: '/reports', component: Reports },
