@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Search, X, ChevronRight, ChevronDown, Zap, Database } from 'lucide-react';
+import { Search, X, ChevronRight, ChevronLeft, Zap, Database } from 'lucide-react';
 import {
   Dashboard,
   WidgetCategory,
@@ -36,7 +36,6 @@ interface DashboardSidebarProps {
 
 const SIDEBAR_WIDTH = 340;
 const APP_HEADER_HEIGHT = 84;
-const TOGGLE_VERTICAL_CENTER = `calc(${APP_HEADER_HEIGHT}px + (100vh - ${APP_HEADER_HEIGHT}px) / 2)`;
 export default function DashboardSidebar({
   isOpen,
   onToggle,
@@ -101,58 +100,54 @@ export default function DashboardSidebar({
         onClick={onToggle}
         style={{
           position: 'fixed',
-          left: isOpen ? `${SIDEBAR_WIDTH}px` : '0',
-          top: TOGGLE_VERTICAL_CENTER,
-          transform: 'translateY(-50%)',
+          top: APP_HEADER_HEIGHT + 24,
+          left: isOpen ? SIDEBAR_WIDTH - 14 : 12,
+          zIndex: 260,
           width: 28,
           height: 56,
           background: 'var(--bg-elev)',
           border: '1px solid var(--control-border)',
-          borderRadius: '0 12px 12px 0',
+          borderRadius: isOpen ? '12px 0 0 12px' : '0 12px 12px 0',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 180,
-          transition: 'left 0.18s ease',
           boxShadow: '0 6px 16px rgba(0,0,0,0.28)'
         }}
         title={isOpen ? 'Collapse library (Ctrl+B)' : 'Expand library (Ctrl+B)'}
       >
-        {isOpen ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+        {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
       </button>
 
-      <aside
-        className="dashboard-sidebar"
-        style={{
-          position: 'fixed',
-          top: APP_HEADER_HEIGHT,
-          bottom: 0,
-          left: 0,
-          width: isOpen ? `${SIDEBAR_WIDTH}px` : '0px',
-          background: 'transparent',
-          borderRight: isOpen ? '1px solid var(--control-border)' : 'none',
-          overflow: 'hidden',
-          transition: 'width 0.18s ease',
-          zIndex: 170,
-          pointerEvents: isOpen ? 'auto' : 'none'
-        }}
-      >
-        <div
+      {isOpen && (
+        <aside
+          className="dashboard-sidebar"
           style={{
+            position: 'fixed',
+            top: APP_HEADER_HEIGHT,
+            bottom: 0,
+            left: 0,
             width: `${SIDEBAR_WIDTH}px`,
-            height: '100%',
-            display: 'grid',
-            gridTemplateRows: 'auto auto 1fr auto',
-            background: 'linear-gradient(180deg, rgba(19,19,22,0.9), rgba(15,15,18,0.94))',
-            boxSizing: 'border-box',
+            background: 'transparent',
             borderRight: '1px solid var(--control-border)',
-            boxShadow: '0 18px 44px rgba(0,0,0,0.42)',
-            backdropFilter: 'blur(18px) saturate(135%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(135%)',
-            pointerEvents: 'auto'
+            overflow: 'hidden',
+            zIndex: 250
           }}
         >
+          <div
+            style={{
+              width: `${SIDEBAR_WIDTH}px`,
+              height: '100%',
+              display: 'grid',
+              gridTemplateRows: 'auto auto 1fr auto',
+              background: 'linear-gradient(180deg, rgba(19,19,22,0.9), rgba(15,15,18,0.94))',
+              boxSizing: 'border-box',
+              borderRight: '1px solid var(--control-border)',
+              boxShadow: '0 18px 44px rgba(0,0,0,0.42)',
+              backdropFilter: 'blur(18px) saturate(135%)',
+              WebkitBackdropFilter: 'blur(18px) saturate(135%)'
+            }}
+          >
           <header style={{
             padding: '20px 20px 12px 24px',
             borderBottom: '1px solid var(--control-border)',
@@ -310,8 +305,9 @@ export default function DashboardSidebar({
               Dashboard: {dashboard.name} • Widgets {dashboard.widgets.length}
             </div>
           </footer>
-        </div>
-      </aside>
+          </div>
+        </aside>
+      )}
 
       {isOpen && (
         <div
@@ -322,8 +318,7 @@ export default function DashboardSidebar({
             right: 0,
             bottom: 0,
             background: 'rgba(0,0,0,0.42)',
-            zIndex: 90,
-            display: window.innerWidth <= 900 ? 'block' : 'none'
+            zIndex: 240
           }}
           onClick={onToggle}
         />

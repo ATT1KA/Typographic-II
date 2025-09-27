@@ -64,6 +64,7 @@
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   box-shadow: 0 6px 10px rgba(0,0,0,0.22);
+  z-index: 300;
   border-radius: 0 !important;
 }
 .app-nav { display: flex; gap: 16px; }
@@ -99,13 +100,6 @@
   transition: padding-left 0.18s ease;
 }
 
-.dashboard-page.sidebar-open {
-  padding-left: 340px;
-}
-
-.dashboard-page.sidebar-closed {
-  padding-left: 0;
-}
 
 .widget-card {
   align-items: stretch;

@@ -319,13 +319,15 @@ export default function DashboardBuilder() {
             position: {
               x: position.x,
               y: position.y,
-              width: WIDGET_SIZES.medium.width,
-              height: WIDGET_SIZES.medium.height
+              width: WIDGET_SIZES.medium.width + 1,
+              height: WIDGET_SIZES.medium.height + 1
             },
             settings: {},
             style: {},
             filters: []
           } as WidgetConfig;
+      widget.position.width = Math.max(widget.position.width, 2);
+      widget.position.height = Math.max(widget.position.height, 2);
       return {
         ...dashboard,
         widgets: [...dashboard.widgets, widget],
@@ -729,7 +731,7 @@ export default function DashboardBuilder() {
   }
 
   return (
-    <div className={`dashboard-page ${sidebarState.isOpen ? 'sidebar-open' : 'sidebar-closed'}`} style={{
+    <div className="dashboard-page" style={{
       height: '100%',
       display: 'flex',
       background: 'radial-gradient(1200px 600px at 80% -10%, rgba(108,92,231,0.08), transparent 40%), radial-gradient(800px 400px at -10% 110%, rgba(0,184,148,0.07), transparent 45%), var(--bg)',

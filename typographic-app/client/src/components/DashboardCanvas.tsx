@@ -12,11 +12,16 @@ interface DashboardCanvasProps {
   onWidgetConfigure: (widgetId: string) => void;
 }
 
+type ResizeHandle = 'se' | 's' | 'e';
+
 interface DragState {
   isDragging: boolean;
-  dragWidget: string | null;
-  dragOffset: { x: number; y: number };
-  dragStart: { x: number; y: number };
+  widgetId: string | null;
+  mode: 'move' | 'resize' | null;
+  resizeHandle?: ResizeHandle;
+  pointerStart: { x: number; y: number };
+  widgetStartPosition: { x: number; y: number };
+  widgetStartSize: { width: number; height: number };
 }
 
 export default function DashboardCanvas({
@@ -31,9 +36,12 @@ export default function DashboardCanvas({
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
-    dragWidget: null,
-    dragOffset: { x: 0, y: 0 },
-    dragStart: { x: 0, y: 0 }
+    widgetId: null,
+    mode: null,
+    resizeHandle: undefined,
+    pointerStart: { x: 0, y: 0 },
+    widgetStartPosition: { x: 0, y: 0 },
+    widgetStartSize: { width: 0, height: 0 }
   });
   // Grid and snapping constants
   const GRID_SIZE = dashboard.settings.gridSize || 48;
@@ -105,39 +113,39 @@ export default function DashboardCanvas({
     const startY = event.clientY - rect.top;
 
     // Check if clicking on resize handle
-    const isResizeHandle = (event.target as HTMLElement).classList.contains('widget-resize-handle');
-    if (isResizeHandle) {
-      handleResizeStart(event, widgetId);
+    const handle = (event.target as HTMLElement).closest<HTMLElement>('.widget-resize-handle');
+    if (handle) {
+      const handleType = handle.dataset.handle as ResizeHandle;
+      setDragState({
+        isDragging: true,
+        widgetId,
+        mode: 'resize',
+        resizeHandle: handleType,
+        pointerStart: { x: event.clientX, y: event.clientY },
+        widgetStartPosition: { x: widget.position.x, y: widget.position.y },
+        widgetStartSize: { width: widget.position.width, height: widget.position.height },
+        // offset retained for backwards compatibility; unused in resize/move
+        offset: { x: 0, y: 0 }
+      });
       return;
     }
 
     setDragState({
       isDragging: true,
-      dragWidget: widgetId,
-      dragOffset: {
-        x: widget.position.x - startX,
-        y: widget.position.y - startY
-      },
-      dragStart: { x: startX, y: startY }
+      widgetId,
+      mode: 'move',
+      resizeHandle: undefined,
+      pointerStart: { x: event.clientX, y: event.clientY },
+      widgetStartPosition: { x: widget.position.x, y: widget.position.y },
+      widgetStartSize: { width: widget.position.width, height: widget.position.height },
+      offset: undefined
     });
 
     onWidgetSelect(widgetId, event.ctrlKey || event.metaKey);
   }, [dashboard.widgets, onWidgetSelect]);
 
-  const handleResizeStart = useCallback((event: React.MouseEvent, widgetId: string) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    setDragState({
-      isDragging: true,
-      dragWidget: widgetId,
-      dragOffset: { x: 0, y: 0 },
-      dragStart: { x: event.clientX, y: event.clientY }
-    });
-  }, []);
-
   const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!dragState.isDragging || !dragState.dragWidget) return;
+    if (!dragState.isDragging || !dragState.widgetId || !dragState.mode) return;
 
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -145,52 +153,62 @@ export default function DashboardCanvas({
     const currentX = event.clientX - rect.left;
     const currentY = event.clientY - rect.top;
 
-    const widget = dashboard.widgets.find(w => w.id === dragState.dragWidget);
-    if (!widget) return;
+    if (dragState.mode === 'move') {
+      const deltaX = event.clientX - dragState.pointerStart.x;
+      const deltaY = event.clientY - dragState.pointerStart.y;
 
-    if (dragState.dragWidget) { // Resize mode
-      const deltaX = currentX - dragState.dragStart.x;
-      const deltaY = currentY - dragState.dragStart.y;
+      const rawPosition = {
+        x: dragState.widgetStartPosition.x + deltaX,
+        y: dragState.widgetStartPosition.y + deltaY
+      };
 
-      const newWidth = Math.max(1, widget.position.width + Math.round(deltaX / GRID_SIZE));
-      const newHeight = Math.max(1, widget.position.height + Math.round(deltaY / GRID_SIZE));
+      const snappedPosition = snapToGrid(rawPosition);
 
-      if (isValidPosition(widget.id, widget.position, { width: newWidth, height: newHeight })) {
-        onWidgetUpdate(widget.id, {
+      if (isValidPosition(dragState.widgetId, snappedPosition, dragState.widgetStartSize)) {
+        onWidgetUpdate(dragState.widgetId, {
           position: {
-            ...widget.position,
-            width: newWidth,
-            height: newHeight
+            ...snappedPosition,
+            width: dragState.widgetStartSize.width,
+            height: dragState.widgetStartSize.height
           }
         });
       }
-    } else { // Move mode
-      const newPosition = snapToGrid({
-        x: currentX + dragState.dragOffset.x,
-        y: currentY + dragState.dragOffset.y
-      });
+    } else if (dragState.mode === 'resize' && dragState.resizeHandle) {
+      const deltaX = event.clientX - dragState.pointerStart.x;
+      const deltaY = event.clientY - dragState.pointerStart.y;
 
-      if (isValidPosition(widget.id, newPosition, {
-        width: widget.position.width,
-        height: widget.position.height
-      })) {
-        onWidgetUpdate(widget.id, {
+      let nextWidth = dragState.widgetStartSize.width;
+      let nextHeight = dragState.widgetStartSize.height;
+
+      if (dragState.resizeHandle === 'se' || dragState.resizeHandle === 'e') {
+        nextWidth = Math.max(2, dragState.widgetStartSize.width + Math.round(deltaX / GRID_SIZE));
+      }
+      if (dragState.resizeHandle === 'se' || dragState.resizeHandle === 's') {
+        nextHeight = Math.max(2, dragState.widgetStartSize.height + Math.round(deltaY / GRID_SIZE));
+      }
+
+      if (isValidPosition(dragState.widgetId, dragState.widgetStartPosition, { width: nextWidth, height: nextHeight })) {
+        onWidgetUpdate(dragState.widgetId, {
           position: {
-            ...newPosition,
-            width: widget.position.width,
-            height: widget.position.height
+            ...dragState.widgetStartPosition,
+            width: nextWidth,
+            height: nextHeight
           }
         });
       }
     }
-  }, [dragState, dashboard.widgets, GRID_SIZE, snapToGrid, isValidPosition, onWidgetUpdate]);
+  }, [dragState, GRID_SIZE, isValidPosition, onWidgetUpdate]);
 
   const handleMouseUp = useCallback(() => {
     setDragState({
       isDragging: false,
-      dragWidget: null,
-      dragOffset: { x: 0, y: 0 },
-      dragStart: { x: 0, y: 0 }
+      widgetId: null,
+      mode: null,
+      resizeHandle: undefined,
+      pointerStart: { x: 0, y: 0 },
+      widgetStartPosition: { x: 0, y: 0 },
+      widgetStartSize: { width: 0, height: 0 },
+      offset: { x: 0, y: 0 }
     });
   }, []);
 
@@ -289,6 +307,8 @@ export default function DashboardCanvas({
   // Render widget
   const renderWidget = (widget: WidgetConfig) => {
     const isSelected = selectedWidgets.has(widget.id);
+    const minWidth = Math.max(2, WIDGET_SIZES[widget.size].width);
+    const minHeight = Math.max(2, WIDGET_SIZES[widget.size].height);
 
     return (
       <div
@@ -300,6 +320,8 @@ export default function DashboardCanvas({
           top: widget.position.y,
           width: widget.position.width * GRID_SIZE,
           height: widget.position.height * GRID_SIZE,
+          minWidth: minWidth * GRID_SIZE,
+          minHeight: minHeight * GRID_SIZE,
           background: widget.style?.backgroundColor || 'var(--bg-elev)',
           border: `1px solid ${widget.style?.borderColor || 'var(--control-border)'}`,
           borderRadius: widget.style?.borderRadius || 8,
@@ -379,56 +401,75 @@ export default function DashboardCanvas({
         {/* Resize handles */}
         <div
           className="widget-resize-handle resize-handle-se"
+          data-handle="se"
           style={{
             position: 'absolute',
-            right: 0,
-            bottom: 0,
-            width: '20px',
-            height: '20px',
-            cursor: 'nw-resize',
+            right: -6,
+            bottom: -6,
+            width: 16,
+            height: 16,
+            cursor: 'nwse-resize',
+            borderRadius: 4,
+            background: 'rgba(108,92,231,0.85)',
+            border: '1px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            color: '#0b0d12',
+            fontSize: 10,
+            fontWeight: 600
           }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
         >
-          ↖️
+          ↘
         </div>
         <div
           className="widget-resize-handle resize-handle-s"
+          data-handle="s"
           style={{
             position: 'absolute',
-            bottom: 0,
+            bottom: -6,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: '20px',
-            height: '20px',
-            cursor: 's-resize',
+            width: 22,
+            height: 12,
+            cursor: 'ns-resize',
+            borderRadius: 999,
+            background: 'rgba(108,92,231,0.75)',
+            border: '1px solid rgba(255,255,255,0.25)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            color: '#0b0d12',
+            fontSize: 9,
+            fontWeight: 600
           }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
         >
-          ↓
+          ═
         </div>
         <div
           className="widget-resize-handle resize-handle-e"
+          data-handle="e"
           style={{
             position: 'absolute',
             top: '50%',
-            right: 0,
+            right: -6,
             transform: 'translateY(-50%)',
-            width: '20px',
-            height: '20px',
-            cursor: 'e-resize',
+            width: 12,
+            height: 22,
+            cursor: 'ew-resize',
+            borderRadius: 999,
+            background: 'rgba(108,92,231,0.75)',
+            border: '1px solid rgba(255,255,255,0.25)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            color: '#0b0d12',
+            fontSize: 9,
+            fontWeight: 600
           }}
-          onMouseDown={(e) => handleResizeStart(e, widget.id)}
         >
-          →
+          ║
         </div>
       </div>
     );

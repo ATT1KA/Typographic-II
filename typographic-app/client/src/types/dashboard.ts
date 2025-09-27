@@ -448,6 +448,10 @@ export function createWidgetFromLibrary(
   libraryItem: WidgetLibraryItem,
   position: { x: number; y: number }
 ): WidgetConfig {
+  const baseSize = WIDGET_SIZES[libraryItem.defaultSize];
+  const width = Math.max(1, baseSize.width + 1);
+  const height = Math.max(1, baseSize.height + 1);
+
   return {
     id: `${libraryItem.type}-${Date.now()}`,
     type: libraryItem.type,
@@ -457,8 +461,8 @@ export function createWidgetFromLibrary(
     position: {
       x: position.x,
       y: position.y,
-      width: WIDGET_SIZES[libraryItem.defaultSize].width,
-      height: WIDGET_SIZES[libraryItem.defaultSize].height
+      width,
+      height
     },
     settings: { ...libraryItem.defaultSettings },
     style: {},
