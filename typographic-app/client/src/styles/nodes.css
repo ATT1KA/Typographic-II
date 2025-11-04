@@ -1,10 +1,10 @@
-.node-card { position: relative; display: flex; flex-direction: column; min-width: 300px; width: 100%; height: 100%; border: 1px solid var(--control-border); border-radius: 10px; background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), white 3%), var(--bg-elev) 60%); color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.20), inset 0 -1px 3px rgba(0,0,0,0.48); box-sizing: border-box; }
+.node-card { position: relative; display: flex; flex-direction: column; width: fit-content; min-width: 200px; max-width: 800px; height: auto; border: 1px solid var(--control-border); border-radius: 10px; background: transparent; color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.20), inset 0 -1px 3px rgba(0,0,0,0.48); box-sizing: border-box; overflow: hidden; }
 .node-connectivity { min-width: 160px; }
 .node-card.selected.node-connectivity { max-width: 100%; }
 .node-connectivity, .node-connectivity * { box-sizing: border-box; }
 .node-connectivity { max-width: 100%; overflow: visible; }
-.node-connectivity .node-head { padding: 6px 10px; }
-.node-connectivity .node-title { font-size: 12px; font-weight: 700; text-transform: none; }
+.node-connectivity .node-head { padding: 11px 20px 16px 20px; }
+.node-connectivity .node-title { font-size: 18px; font-weight: 700; text-transform: none; }
 .node-connectivity .node-body { padding: 8px; gap: 6px; min-width: 0; max-width: 100%; overflow-x: hidden; }
 .node-connectivity .node-toggle { font-size: 11px; padding: 4px 8px; border-radius: 4px; }
 .node-connectivity .node-form { gap: 6px; min-width: 0; max-width: 100%; overflow-x: hidden; }
@@ -12,52 +12,25 @@
 .node-connectivity .node-form input, .node-connectivity .node-form textarea, .node-connectivity .node-form select { padding: 6px 8px; font-size: 11px; }
 .node-connectivity .node-form textarea { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; width: 100%; max-width: 100%; }
 .node-card.selected { border-color: color-mix(in oklab, var(--control-border), white 25%); }
-.node-head { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid var(--control-border); display: grid; gap: 6px; border-top-left-radius: 10px; border-top-right-radius: 10px; color: var(--text); }
-.node-title { font-weight: 700; line-height: 1; }
-.node-sub { font-size: 12px; opacity: 0.8; }
-.node-head .node-title, .node-head .node-sub { text-shadow: 0 0 2px rgba(0,0,0,0.9); }
+.node-head { flex: 0 0 auto; padding: 11px 20px 16px 20px; min-height: 80px; display: flex; flex-direction: column; gap: 8px; justify-content: flex-start; align-items: flex-start; border-radius: 10px; color: #000000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+.node-vertical { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; margin-bottom: -2px; color: #000000; }
+.node-title { font-size: 20px; font-weight: 600; font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.4; letter-spacing: -0.01em; color: #000000; margin-top: -5px; }
+.node-sub { font-size: 15px; font-weight: 400; opacity: 0.8; line-height: 1.4; margin-top: 2px; color: #000000; }
+.node-head .node-title, .node-head .node-sub, .node-head .node-vertical { text-shadow: none; }
 /* Connectivity nodes: distinct chrome to differentiate from Data nodes */
 .node-connectivity { border-style: dashed; }
-.node-connectivity .node-head { background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), black 8%), color-mix(in oklab, var(--bg-elev), black 18%)); }
-.node-connectivity .node-title { letter-spacing: 0.2px; }
+.node-connectivity .node-head { background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), black 8%), color-mix(in oklab, var(--bg-elev), black 18%)); color: var(--text); }
+.node-connectivity .node-title { letter-spacing: 0.2px; color: var(--text); margin-top: -5px; }
+.node-connectivity .node-vertical { color: var(--text); }
+.node-connectivity .node-sub { color: var(--text); }
 .node-connectivity .node-toggle { background: #141414; }
-/* Outline header text for SCI vertical with yellow header background */
+/* SCI vertical: use black text for contrast on yellow background, no glow effects */
 .vertical-sci .node-head .node-title,
-.vertical-sci .node-head .node-sub {
-  /* Sci-specific: use black fill with a soft white outer glow for contrast on yellow headers */
+.vertical-sci .node-head .node-sub,
+.vertical-sci .node-head .node-vertical {
   color: #000000;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.475), 0 0 6px rgba(255, 255, 255, 0.3);
-  position: relative; /* ensure pseudo-elements position relative to text */
-  pointer-events: auto; /* ensure the actual text is clickable */
-
-  /* Maintain a subtle light stroke so the glyph edges remain crisp against the glow */
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.32);
-  paint-order: stroke fill; /* render stroke under fill for cleaner edges */
-}
-
-/* Firefox fallback */
-@supports not (-webkit-text-stroke: 1px black) {
-  .vertical-sci .node-head .node-title,
-  .vertical-sci .node-head .node-sub {
-    /* Outer glow + soft inner halo to mimic stroke (fallback for browsers without text-stroke) */
-    text-shadow:
-      0 0 2px rgba(255, 255, 255, 0.475),
-      0 0 1.5px rgba(255, 255, 255, 0.15);
-  }
-}
-
-/* Prevent decorative pseudo-elements from intercepting clicks */
-.vertical-sci .node-head .node-title::before,
-.vertical-sci .node-head .node-title::after,
-.vertical-sci .node-head .node-sub::before,
-.vertical-sci .node-head .node-sub::after {
-  pointer-events: none;
-}
-
-/* Ensure summary-like titles and their decorations don't block clicks when used in rail */
-.vertical-sci .node-head .node-title,
-.vertical-sci .node-head .node-sub {
-  isolation: isolate; /* keep pseudo-elements from creating a new stacking context over other UI */
+  text-shadow: none;
+  -webkit-text-stroke: none;
 }
 .node-body { flex: 1 1 auto; padding: 12px; overflow: auto; display: grid; gap: 10px; }
 .node-toggle { font-size: 12px; padding: 6px 10px; border-radius: 3px; border: 1px solid var(--control-border); background: var(--control-bg); color: var(--muted); }
@@ -200,6 +173,13 @@
 
 /* Connected handles get a faint 2px glow matching their kind */
 .node-port.connected { transform: scale(1.08); }
+
+/* Simple pulse animation for data ports */
+@keyframes node-port-simple {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
 /* Heartbeat-like pulse: quick double-beat then rest (non-linear feel) */
 @keyframes node-port-pulse {
   /* small initial beat */

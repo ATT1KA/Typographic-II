@@ -20,6 +20,7 @@ import '@xyflow/react/dist/style.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
+import NodeConfigPanel from '../components/NodeConfigPanel';
 import { type LibraryItem as BaseItem } from '../components/NodeLibrary';
 const NodeLibrary = lazy(() => import('../components/NodeLibrary'));
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
@@ -67,7 +68,7 @@ const seedNodes: Node<NodeData>[] = [
     position: { x: 680, y: 120 },
     type: 'custom',
     data: {
-      label: 'Supply Chain: Delivery/Shipping (Disruptions)',
+      label: 'Delivery/Shipping (Disruptions)',
       vertical: 'SCI',
       subtype: 'Delivery/Shipping',
       config: {
@@ -84,7 +85,7 @@ const seedNodes: Node<NodeData>[] = [
     position: { x: 980, y: 120 },
     type: 'custom',
     data: {
-      label: 'BI: Market Volatility',
+      label: 'Market Volatility',
       vertical: 'BI',
       subtype: 'Reporting',
       config: {
@@ -218,7 +219,7 @@ function WorkflowCanvas({
       <div className="reactflow-controls-left-of-minimap">
         <Controls />
       </div>
-  <Background gap={GRID_SIZE} size={2} color="#303030"       />
+  <Background gap={GRID_SIZE} size={2} color="#303030" />
     </ReactFlow>
     </div>
   );
@@ -234,6 +235,8 @@ export default function WorkflowBuilder() {
     return v === null ? true : v === 'true';
   });
   const [libraryCategory, setLibraryCategory] = useState<NodeCategory>('Data');
+  const [configPanelOpen, setConfigPanelOpen] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const initialLoadedRef = useRef(false);
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
   const edgeTypes = useMemo<EdgeTypes>(() => ({ bezier: BezierEdge }), []);
@@ -446,6 +449,30 @@ export default function WorkflowBuilder() {
     localStorage.setItem('wfSidebarOpen', String(sidebarOpen));
   }, [sidebarOpen]);
 
+  // Track node selection and open/close config panel
+  useEffect(() => {
+    const selected = nodes.filter((n) => n.selected);
+    if (selected.length === 1) {
+      const nodeId = selected[0].id;
+      if (nodeId !== selectedNodeId) {
+        setSelectedNodeId(nodeId);
+        setConfigPanelOpen(true);
+      }
+    } else {
+      setConfigPanelOpen(false);
+      setSelectedNodeId(null);
+    }
+  }, [nodes, selectedNodeId]);
+
+  // Handle config updates from panel
+  const handleNodeConfigChange = useCallback((nodeId: string, partial: Partial<NodeData>) => {
+    setNodes((curr) =>
+      curr.map((n) =>
+        n.id === nodeId ? { ...n, data: { ...(n.data as NodeData), ...partial } } : n
+      )
+    );
+  }, [setNodes]);
+
   const defaultEdgeOptions = useMemo(() => ({
     type: 'bezier' as const,
     animated: true,
@@ -483,7 +510,7 @@ export default function WorkflowBuilder() {
       data: (() => {
         const isConn = (item.category ?? item.vertical) === 'Connectivity';
         const base: any = {
-          label: isConn ? String(item.subtype) : `${item.vertical}: ${item.subtype}`,
+          label: isConn ? String(item.subtype) : item.subtype,
           vertical: item.vertical as NodeData['vertical'],
           subtype: item.subtype,
           category: isConn ? 'Connectivity' : (item.category ?? 'Data'),
@@ -556,17 +583,23 @@ export default function WorkflowBuilder() {
       if (isEditing(document.activeElement)) return; // ignore shortcuts while typing
       const isDup = (e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'd');
       const isDel = e.key === 'Delete' || e.key === 'Backspace';
+      const isEsc = e.key === 'Escape';
       if (isDup) {
         e.preventDefault();
         duplicateSelected();
       } else if (isDel) {
         e.preventDefault();
         deleteSelected();
+      } else if (isEsc && configPanelOpen) {
+        e.preventDefault();
+        setConfigPanelOpen(false);
+        setSelectedNodeId(null);
+        setNodes((curr) => curr.map((n) => ({ ...n, selected: false })));
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [duplicateSelected, deleteSelected]);
+  }, [duplicateSelected, deleteSelected, configPanelOpen, setNodes]);
 
   return (
     <div className="workflow-page" style={{ height: '100%', width: '100%', position: 'relative', background: '#000' }}>
@@ -622,6 +655,17 @@ export default function WorkflowBuilder() {
           sidebarOpen={sidebarOpen}
         />
       </ReactFlowProvider>
+      <NodeConfigPanel
+        selectedNode={nodes.find((n) => n.id === selectedNodeId) || null}
+        isOpen={configPanelOpen}
+        onClose={() => {
+          setConfigPanelOpen(false);
+          setSelectedNodeId(null);
+          // Also deselect the node when closing panel
+          setNodes((curr) => curr.map((n) => ({ ...n, selected: false })));
+        }}
+        onConfigChange={handleNodeConfigChange}
+      />
       </div>
     </div>
   );

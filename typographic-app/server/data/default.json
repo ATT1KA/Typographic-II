@@ -4,7 +4,7 @@
       "id": "fundraising-screening",
       "position": {
         "x": -744,
-        "y": -936
+        "y": -1032
       },
       "type": "custom",
       "data": {
@@ -21,20 +21,20 @@
         "category": "Data"
       },
       "measured": {
-        "width": 288,
-        "height": 912
+        "width": 384,
+        "height": 144
       },
       "selected": false,
       "dragging": true,
-      "width": 288,
-      "height": 912,
+      "width": 384,
+      "height": 144,
       "resizing": false
     },
     {
       "id": "sci-shipping",
       "position": {
-        "x": -312,
-        "y": -648
+        "x": -360,
+        "y": -744
       },
       "type": "custom",
       "data": {
@@ -51,20 +51,20 @@
         "category": "Data"
       },
       "measured": {
-        "width": 336,
+        "width": 384,
         "height": 144
       },
       "selected": false,
       "dragging": true,
-      "width": 336,
+      "width": 384,
       "height": 144,
       "resizing": false
     },
     {
       "id": "bi-market-volatility",
       "position": {
-        "x": 264,
-        "y": -744
+        "x": 216,
+        "y": -840
       },
       "type": "custom",
       "data": {
@@ -81,18 +81,18 @@
         "category": "Data"
       },
       "measured": {
-        "width": 288,
+        "width": 384,
         "height": 144
       },
       "selected": false,
       "dragging": true,
-      "width": 288,
+      "width": 384,
       "height": 144
     },
     {
       "id": "connectivity-causal-router-1758355003726",
       "position": {
-        "x": 72,
+        "x": 168,
         "y": -600
       },
       "type": "custom",
@@ -124,8 +124,8 @@
     {
       "id": "connectivity-correlation-router-1758356131568",
       "position": {
-        "x": -264,
-        "y": -840
+        "x": -216,
+        "y": -936
       },
       "type": "custom",
       "data": {
@@ -156,7 +156,7 @@
     {
       "id": "output-dashboard-generator-1758362373789",
       "position": {
-        "x": 696,
+        "x": 792,
         "y": -888
       },
       "type": "custom",
@@ -179,19 +179,19 @@
         }
       },
       "measured": {
-        "width": 288,
-        "height": 96
+        "width": 384,
+        "height": 144
       },
       "selected": false,
       "dragging": true,
-      "width": 288,
-      "height": 96
+      "width": 384,
+      "height": 144
     },
     {
       "id": "output-report-compiler-1758441361913",
       "position": {
-        "x": 696,
-        "y": -600
+        "x": 792,
+        "y": -648
       },
       "type": "custom",
       "data": {
@@ -205,13 +205,13 @@
         }
       },
       "measured": {
-        "width": 288,
-        "height": 96
+        "width": 384,
+        "height": 144
       },
-      "selected": true,
+      "selected": false,
       "dragging": true,
-      "width": 288,
-      "height": 96
+      "width": 384,
+      "height": 144
     }
   ],
   "edges": [

@@ -382,6 +382,112 @@
   pointer-events: none;
 }
 
+/* Right-side rail for Node Configuration Panel */
+.rail-right { 
+  position: absolute; 
+  inset: 0 0 0 auto;  /* Right-aligned instead of left */
+  width: 0; 
+  pointer-events: none; 
+  z-index: 14;  /* Same z-index as left rail */
+}
+
+.rail-right.open { 
+  width: var(--panel-w); 
+  pointer-events: auto; 
+}
+
+/* Backdrop - reuse same styling as left rail */
+.rail-right-backdrop { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,0.45); 
+  opacity: 0; 
+  transition: opacity 180ms ease; 
+  pointer-events: none; 
+  z-index: 12; 
+}
+
+.rail-right.open .rail-right-backdrop { 
+  opacity: 1; 
+  pointer-events: auto; 
+}
+
+/* Panel slides in from RIGHT */
+.rail-right-panel { 
+  height: 100%; 
+  width: 100%;
+  pointer-events: auto; 
+  background: linear-gradient(180deg, rgb(18 17 18 / 20%), rgba(12, 14, 22, 0.2)); 
+  border-left: 1px solid var(--control-border); 
+  box-shadow: 0 4px 4px rgba(0,0,0,0.18); 
+  padding: 12px; 
+  overflow: auto; 
+  transform: translateX(100%);  /* Starts off-screen to the right */
+  transition: transform 200ms ease; 
+  position: relative; 
+  z-index: 13; 
+  backdrop-filter: blur(12px) saturate(140%); 
+  -webkit-backdrop-filter: blur(12px) saturate(140%); 
+}
+
+.rail-right.open .rail-right-panel { 
+  transform: translateX(0);  /* Slides into view */
+}
+
+.rail-right:not(.open) .rail-right-panel { 
+  visibility: hidden; 
+}
+
+/* Apply same focus styling as left rail panel */
+.rail-right-panel :where(button, input, select, textarea, summary, [tabindex]):focus,
+.rail-right-panel :where(button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid rgba(255,255,255,0.06) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) inset !important;
+}
+
+.rail-right-panel button:focus,
+.rail-right-panel button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.09) inset !important;
+  border-color: color-mix(in oklab, var(--control-border), white 12%) !important;
+}
+
+/* Apply scrollbar styling to right panel */
+.rail-right-panel::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+
+.rail-right-panel::-webkit-scrollbar-track {
+  background: rgba(20,20,20,0.45);
+  border-radius: 3px;
+}
+
+.rail-right-panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(36,36,36,0.95), rgba(28,28,28,0.92));
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.45) inset, 0 1px 0 rgba(255,255,255,0.02);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+}
+
+.rail-right-panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(46,46,46,0.98), rgba(32,32,32,0.96));
+}
+
+/* Shared scrollbar styling (Firefox) */
+.rail-right-panel {
+  scrollbar-color: rgba(60,60,60,0.7) rgba(20,20,20,0.35);
+  scrollbar-width: thin;
+}
+
+/* Remove purple focus for interactive elements in right panel */
+.rail-right-panel :where(a, button, input, select, textarea, summary, [tabindex], [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Acrylic toast styling to match modal */
 .toast-acrylic {
   background: linear-gradient(180deg, rgba(16,20,32,0.55), rgba(12,14,22,0.50)) !important;

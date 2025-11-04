@@ -1,25 +1,48 @@
 import { Handle, Position, type NodeProps, NodeResizer, useUpdateNodeInternals, useReactFlow } from '@xyflow/react';
 import { roundToGrid } from '../constants/grid';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
 import '../styles/nodes.css';
 
-const validateUrl = (url: string) => /^https?:\/\/.+/.test(url);
+// Helper function to remove redundant vertical prefixes from labels
+function cleanLabel(label: string, vertical: string): string {
+  if (!label || !vertical) return label;
+  
+  // Map vertical names to their common label prefixes
+  const verticalPrefixes: Record<string, string[]> = {
+    'BI': ['BI:', 'BI '],
+    'SCI': ['Supply Chain:', 'Supply Chain ', 'SCI:', 'SCI '],
+    'Fundraising': ['Fundraising:', 'Fundraising '],
+    'Policymaking': ['Policymaking:', 'Policymaking ', 'Policy:', 'Policy '],
+    'Political': ['Political:', 'Political '],
+    'OSINT': ['OSINT:', 'OSINT '],
+  };
+  
+  const prefixes = verticalPrefixes[vertical] || [`${vertical}:`, `${vertical} `];
+  
+  // Try each prefix (case-insensitive)
+  for (const prefix of prefixes) {
+    const regex = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+    if (regex.test(label)) {
+      return label.replace(regex, '').trim();
+    }
+  }
+  
+  return label;
+}
 
 export default function CustomNode(props: NodeProps) {
   const { selected } = props;
   const data = props.data as NodeData;
-  const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const config = data.config ?? {};
-  const ds = config.dataSource ?? {};
-  const transforms = config.transforms ?? [];
-  const outputs = config.outputs ?? [];
   const isConnectivity = (data.category ?? (data.vertical as any)) === 'Connectivity';
+  
+  // Clean the label to remove redundant vertical prefix
+  const cleanedLabel = useMemo(() => {
+    if (isConnectivity) return String(data.subtype || '').toLowerCase();
+    return cleanLabel(data.label, data.vertical);
+  }, [data.label, data.vertical, data.subtype, isConnectivity]);
   const updateNodeInternals = useUpdateNodeInternals();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const bodyRef = useRef<HTMLDivElement | null>(null);
   const lastUnselectedWidth = useRef<number | null>(null);
   const lastUnselectedHeight = useRef<number | null>(null);
   const rf = useReactFlow();
@@ -50,42 +73,17 @@ export default function CustomNode(props: NodeProps) {
     }
   }, [selected]);
 
-  // When selected (clicked), expand node height to fit content without changing width.
+  // Maintain consistent node sizing (no expansion needed since there's no body content)
   useEffect(() => {
     const root = rootRef.current;
-    const body = bodyRef.current;
-    if (!root || !body) return;
-    if (selected) {
-      // Capture pre-expansion height/width once when entering selected state
-      if (lastUnselectedHeight.current == null) {
-        lastUnselectedHeight.current = root.offsetHeight;
-      }
-      const lockWidth = lastUnselectedWidth.current ?? root.offsetWidth;
-      root.style.width = `${lockWidth}px`; // lock to pre-selection width
-      const prevOverflow = body.style.overflowY;
-      body.style.overflowY = 'visible';
-      // Allow layout to settle before measuring
-      requestAnimationFrame(() => {
-        // Set height to content height
-        root.style.height = 'auto';
-        const targetHeight = root.scrollHeight; // include open form, etc.
-        root.style.height = `${targetHeight}px`;
-        updateNodeInternals((props as any).id ?? '');
-      });
-      return () => { body.style.overflowY = prevOverflow; };
-    } else {
-      // restore when deselected: width auto and height to pre-selection value
+    if (!root) return;
+    if (!selected) {
+      // Reset to natural size when deselected
       root.style.width = '';
-      const restoreH = lastUnselectedHeight.current;
-      if (restoreH && Number.isFinite(restoreH)) {
-        root.style.height = `${restoreH}px`;
-      } else {
-        root.style.height = '';
-      }
-      body.style.overflowY = '';
+      root.style.height = '';
       updateNodeInternals((props as any).id ?? '');
     }
-  }, [selected, open, config, updateNodeInternals, props]);
+  }, [selected, updateNodeInternals, props]);
 
   // Snap node dimensions to GRID on resize end
   useEffect(() => {
@@ -103,35 +101,6 @@ export default function CustomNode(props: NodeProps) {
     return () => { window.removeEventListener('mouseup', onMouseUp); };
   }, [selected, rf, updateNodeInternals, props]);
 
-  const updateConfig = (key: keyof typeof config, value: any) => {
-    data.onChange?.({ config: { ...config, [key]: value } });
-    setErrors((prev) => ({ ...prev, [key]: '' })); // Clear error on change
-  };
-
-  const addTransform = () => {
-    updateConfig('transforms', [...transforms, { type: 'aggregation' }]);
-  };
-
-  const removeTransform = (idx: number) => {
-    updateConfig('transforms', transforms.filter((_, i) => i !== idx));
-  };
-
-  const updateTransform = (idx: number, partial: any) => {
-    const newTransforms = [...transforms];
-    newTransforms[idx] = { ...newTransforms[idx], ...partial };
-    updateConfig('transforms', newTransforms);
-  };
-
-  const validateAndUpdate = (key: string, value: string, validator?: (v: string) => boolean) => {
-    if (validator && !validator(value)) {
-      setErrors((prev) => ({ ...prev, [key]: 'Invalid format' }));
-      return;
-    }
-    if (key === 'endpoint') updateConfig('dataSource', { ...ds, endpoint: value });
-    else if (key === 'notes') updateConfig('dataSource', { ...ds, notes: value });
-    else if (key === 'outputs') updateConfig('outputs', value.split('\n').filter(Boolean));
-  };
-
   const headStyle = useMemo((): CSSProperties => {
     if (isConnectivity) {
       return {
@@ -146,129 +115,23 @@ export default function CustomNode(props: NodeProps) {
     <div ref={rootRef} className={`node-card ${selected ? 'selected' : ''} vertical-${String(data.vertical || '').toLowerCase()} ${isConnectivity ? 'node-connectivity' : ''}`}>
       <NodeResizer
         isVisible={!!selected}
-        minWidth={isConnectivity ? 144 : 288}
-        minHeight={isConnectivity ? 96 : 192}
+        minWidth={isConnectivity ? 144 : 200}
+        minHeight={isConnectivity ? 96 : 120}
         keepAspectRatio={false}
         lineStyle={{ stroke: '#3d4557' }}
         handleStyle={{ width: 8, height: 8, borderRadius: 2 }}
       />
 
       <div className="node-head" style={headStyle}>
-        <div className="node-title">{isConnectivity ? String(data.subtype || '').toLowerCase() : data.label}</div>
         {!isConnectivity && (
-          <div className="node-sub">{data.vertical} • {data.subtype}</div>
+          <div className="node-vertical">{data.vertical}</div>
+        )}
+        <div className="node-title">{cleanedLabel}</div>
+        {!isConnectivity && data.subtype && (
+          <div className="node-sub">{data.subtype}</div>
         )}
       </div>
 
-  <div ref={bodyRef} className="node-body" onKeyDownCapture={(e) => e.stopPropagation()}>
-        <button className="node-toggle" onClick={() => setOpen((v) => !v)}>
-          {open ? 'Hide config' : 'Edit config'}
-        </button>
-        {open && (
-          <div className="node-form">
-            {isConnectivity ? (
-              <>
-                <label style={{ fontSize: 12 }}>
-                  Logic Type
-                  <select
-                    value={(config.logic?.type as string) || 'router'}
-                    onChange={(e) => updateConfig('logic', { ...(config.logic || {}), type: e.target.value })}
-                  >
-                    <option value="router">Router</option>
-                    <option value="join">Join</option>
-                    <option value="split">Split</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="causal-graph">Causal Graph (static)</option>
-                  </select>
-                </label>
-                <label style={{ fontSize: 12 }}>
-                  Parameters (JSON)
-                  <textarea
-                    value={JSON.stringify(config.logic?.params || {}, null, 2)}
-                    onChange={(e) => {
-                      try {
-                        const v = JSON.parse(e.target.value || '{}');
-                        updateConfig('logic', { ...(config.logic || {}), params: v });
-                        setErrors((prev) => ({ ...prev, logic: '' }));
-                      } catch {
-                        setErrors((prev) => ({ ...prev, logic: 'Invalid JSON' }));
-                      }
-                    }}
-                    style={{ resize: 'vertical', whiteSpace: 'pre-wrap' }}
-                  />
-                </label>
-                {errors.logic && <div style={{ color: 'red', fontSize: 12 }}>{errors.logic}</div>}
-                <div style={{ fontSize: 11, opacity: 0.8 }}>
-                  Connectivity nodes are logical routers only. They do not fetch data or call models.
-                </div>
-              </>
-            ) : (
-              <>
-                <label style={{ fontSize: 12 }}>
-                  Data Source Type
-                  <select value={ds.type || 'api'} onChange={(e) => updateConfig('dataSource', { ...ds, type: e.target.value })}>
-                    <option value="api">API</option>
-                    <option value="db">Database</option>
-                    <option value="file">File</option>
-                  </select>
-                </label>
-                <label style={{ fontSize: 12 }}>
-                  Endpoint {errors.endpoint && <span style={{ color: 'red' }}>{errors.endpoint}</span>}
-                  <input
-                    type="text"
-                    value={ds.endpoint || ''}
-                    placeholder="https://api.example.com/endpoint"
-                    onChange={(e) => validateAndUpdate('endpoint', e.target.value, validateUrl)}
-                  />
-                </label>
-                <label style={{ fontSize: 12 }}>
-                  Notes
-                  <textarea
-                    value={ds.notes || ''}
-                    onChange={(e) => validateAndUpdate('notes', e.target.value)}
-                  />
-                </label>
-                <div>
-                  <label style={{ fontSize: 12 }}>Transforms</label>
-                  {transforms.map((t: any, idx: number) => (
-                    <div key={idx} style={{ marginBottom: 8, padding: 8, border: '1px solid var(--control-border)', borderRadius: 8, background: 'var(--control-bg)' }}>
-                      <select value={t.type} onChange={(e) => updateTransform(idx, { type: e.target.value })}>
-                        <option value="aggregation">Aggregation</option>
-                        <option value="anomaly-detection">Anomaly Detection</option>
-                        <option value="lm-studio-summary">LM Studio Summary</option>
-                      </select>
-                      {t.type === 'lm-studio-summary' && (
-                        <>
-                          <input
-                            placeholder="LM Endpoint"
-                            value={t.params?.endpoint || ''}
-                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), endpoint: e.target.value } })}
-                          />
-                          <textarea
-                            placeholder="Prompt"
-                            value={t.params?.prompt || ''}
-                            onChange={(e) => updateTransform(idx, { params: { ...(t.params || {}), prompt: e.target.value } })}
-                          />
-                        </>
-                      )}
-                      <button onClick={() => removeTransform(idx)} style={{ marginTop: 4 }}>Remove</button>
-                    </div>
-                  ))}
-                  <button onClick={addTransform} style={{ fontSize: 12 }}>Add Transform</button>
-                </div>
-                <label style={{ fontSize: 12 }}>
-                  Outputs (one per line)
-                  <textarea
-                    value={outputs.join('\n')}
-                    placeholder="dashboard: /dash/markets\nalerts: slack://#markets"
-                    onChange={(e) => validateAndUpdate('outputs', e.target.value)}
-                  />
-                </label>
-              </>
-            )}
-          </div>
-        )}
-      </div>
 
       {(() => {
         // Infer category for legacy nodes
@@ -313,7 +176,7 @@ export default function CustomNode(props: NodeProps) {
 
         return ports.map((p, i) => {
           const isIn = p.direction === 'in';
-          const offset = 12 + i * 14;
+          const offset = 20 + i * 16;
           const color = p.kind === 'meta' ? '#e05555' : '#9a9a9a';
           const tooltip = `${p.kind === 'meta' ? 'Meta' : 'Data'} ${isIn ? 'In' : 'Out'}`;
           const cls = `node-port node-port--${p.kind} node-port--${p.direction}` + (connectedHandles.has(p.id) ? ' connected' : '');
