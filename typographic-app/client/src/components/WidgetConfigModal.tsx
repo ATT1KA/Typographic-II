@@ -428,8 +428,8 @@ export default function WidgetConfigModal({
                                 textAlign: 'left',
                                 padding: 10,
                                 borderRadius: 6,
-                                border: `1px solid ${isConnected ? 'var(--accent)' : 'var(--control-border)'}`,
-                                background: isConnected ? 'rgba(108,92,231,0.18)' : 'var(--control-bg)',
+                                border: `1px solid ${isConnected ? 'rgba(246,198,91,0.45)' : 'var(--control-border)'}`,
+                                background: isConnected ? 'rgba(246,198,91,0.14)' : 'var(--control-bg)',
                                 color: 'var(--text)'
                               }}
                             >

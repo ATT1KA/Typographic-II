@@ -411,13 +411,13 @@ export default function DashboardCanvas({
             height: 16,
             cursor: 'nwse-resize',
             borderRadius: 4,
-            background: 'rgba(108,92,231,0.85)',
-            border: '1px solid rgba(255,255,255,0.35)',
+            background: 'rgba(245,245,245,0.85)',
+            border: '1px solid rgba(255,255,255,0.55)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#0b0d12',
+            color: '#050505',
             fontSize: 10,
             fontWeight: 600
           }}
@@ -436,12 +436,12 @@ export default function DashboardCanvas({
             height: 12,
             cursor: 'ns-resize',
             borderRadius: 999,
-            background: 'rgba(108,92,231,0.75)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(245,245,245,0.72)',
+            border: '1px solid rgba(255,255,255,0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#0b0d12',
+            color: '#050505',
             fontSize: 9,
             fontWeight: 600
           }}
@@ -460,12 +460,12 @@ export default function DashboardCanvas({
             height: 22,
             cursor: 'ew-resize',
             borderRadius: 999,
-            background: 'rgba(108,92,231,0.75)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'rgba(245,245,245,0.72)',
+            border: '1px solid rgba(255,255,255,0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#0b0d12',
+            color: '#050505',
             fontSize: 9,
             fontWeight: 600
           }}

@@ -523,7 +523,7 @@ export default function DashboardBuilder() {
                         <div className="dashboard-menu-item-header">
                           <span
                             className="dashboard-menu-item-avatar"
-                            style={{ background: summary.metadata?.color ?? 'rgba(108,92,231,0.22)' }}
+                            style={{ background: summary.metadata?.color ?? 'rgba(255,255,255,0.08)' }}
                           >
                             {summary.metadata?.icon ?? '📊'}
                           </span>

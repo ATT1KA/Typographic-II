@@ -37,16 +37,15 @@ export type NodeData = {
   onChange?: (partial: Partial<NodeData>) => void;
 };
 
-// Monochrome header backgrounds by vertical (neutral tones)
+// Monochrome header backgrounds by vertical (subtle tonal shifts only)
 export const verticalColors: Record<Vertical, string> = {
-  // Restored vibrant header colors per vertical
-  BI: '#0984e3',          // blue
-  Political: '#e17055',   // orange
-  Policymaking: '#6c5ce7',// purple
-  Fundraising: '#22c55e', // green
-  OSINT: '#00b894',       // teal
-  SCI: '#fdcb6e',         // amber
-  Connectivity: '#8ab4ff',
-  Transformation: '#ffb86c',
-  Output: '#2596be'
+  BI: '#343434',
+  Political: '#3b3b3b',
+  Policymaking: '#424242',
+  Fundraising: '#494949',
+  OSINT: '#515151',
+  SCI: '#585858',
+  Connectivity: '#606060',
+  Transformation: '#696969',
+  Output: '#727272'
 };

@@ -110,12 +110,16 @@ export default function DashboardToolbar({
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: 10,
-              border: '1px solid var(--control-border)',
-              background: favorite ? 'rgba(108,92,231,0.20)' : 'var(--control-bg)'
+              border: favorite ? '1px solid rgba(246,198,91,0.48)' : '1px solid var(--control-border)',
+              background: favorite ? 'rgba(246,198,91,0.16)' : 'var(--control-bg)'
             }}
             title={favorite ? 'Unfavorite dashboard' : 'Mark as favorite'}
           >
-            <Star size={14} color={favorite ? 'var(--accent)' : 'var(--muted)'} fill={favorite ? 'var(--accent)' : 'transparent'} />
+            <Star
+              size={14}
+              color={favorite ? '#f6c65b' : 'var(--muted)'}
+              fill={favorite ? '#f6c65b' : 'transparent'}
+            />
           </button>
 
           {isRenaming ? (
@@ -167,9 +171,9 @@ export default function DashboardToolbar({
               <span style={{
                 padding: '2px 6px',
                 borderRadius: 999,
-                background: 'rgba(108,92,231,0.18)',
-                border: '1px solid rgba(108,92,231,0.35)',
-                color: 'var(--accent)',
+                background: 'rgba(246,198,91,0.18)',
+                border: '1px solid rgba(246,198,91,0.36)',
+                color: '#f6c65b',
                 fontSize: 10
               }}>
                 UNSAVED
@@ -204,9 +208,9 @@ export default function DashboardToolbar({
           disabled={isSaving}
           style={{
             padding: '8px 16px',
-            background: isSaving ? 'var(--bg-elev-2)' : 'var(--accent)',
-            color: isSaving ? 'var(--muted)' : '#fff',
-            border: '1px solid var(--control-border)',
+            background: isSaving ? 'var(--bg-elev-2)' : 'rgba(240,240,240,0.9)',
+            color: isSaving ? 'var(--muted)' : '#050505',
+            border: isSaving ? '1px solid var(--control-border)' : '1px solid rgba(255,255,255,0.65)',
             borderRadius: 10,
             display: 'inline-flex',
             alignItems: 'center',

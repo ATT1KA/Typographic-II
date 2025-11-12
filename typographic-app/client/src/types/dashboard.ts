@@ -239,7 +239,7 @@ export const DEFAULT_DASHBOARD: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'
   createdBy: undefined,
   metadata: {
     icon: '📊',
-    color: '#6c5ce7',
+    color: '#f6c65b',
     tags: [],
     defaultWorkflowId: 'default',
     lastViewedWorkflowId: 'default',
