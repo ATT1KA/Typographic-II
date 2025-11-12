@@ -24,13 +24,15 @@ interface WidgetConfigModalProps {
 interface ConfigFieldProps {
   field: {
     key: string;
-    type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'range';
+    type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'range' | 'multiselect';
     label: string;
     required: boolean;
     defaultValue: any;
     options?: { label: string; value: any }[];
     min?: number;
     max?: number;
+    step?: number;
+    helperText?: string;
   };
   value: any;
   onChange: (value: any) => void;
@@ -89,6 +91,27 @@ function ConfigField({ field, value, onChange }: ConfigFieldProps) {
             value={value ?? field.defaultValue}
             onChange={(e) => onChange(e.target.value)}
             className="config-select"
+          >
+            {field.options?.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+
+      case 'multiselect':
+        return (
+          <select
+            id={inputId}
+            multiple
+            value={(value as any[]) ?? []}
+            onChange={(e) => {
+              const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
+              onChange(selected);
+            }}
+            className="config-select"
+            size={Math.min(6, Math.max(3, field.options?.length || 3))}
           >
             {field.options?.map(option => (
               <option key={option.value} value={option.value}>
@@ -158,8 +181,10 @@ function ConfigField({ field, value, onChange }: ConfigFieldProps) {
       {renderInput()}
       {field.type !== 'boolean' && (
         <div className="config-help">
-          {field.type === 'range' && `${field.min || 0} - ${field.max || 100}`}
-          {field.type === 'color' && 'Click to select color'}
+          {field.helperText ?? (
+            field.type === 'range' ? `${field.min || 0} - ${field.max || 100}` :
+            field.type === 'color' ? 'Click to select color' : ''
+          )}
         </div>
       )}
     </div>

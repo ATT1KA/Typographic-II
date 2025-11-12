@@ -14,6 +14,16 @@ module.exports = {
   ignorePatterns: ["dist", "node_modules"],
   rules: {
     "import/no-unresolved": "off",
-    "n/no-missing-import": "off"
+    "n/no-missing-import": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "n/no-process-exit": "off"
   }
 };

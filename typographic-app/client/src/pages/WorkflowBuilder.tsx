@@ -132,14 +132,19 @@ function WorkflowCanvas({
   const wrapperRef = useRef<HTMLElement | null>(null);
   const minimapRef = useRef<HTMLElement | null>(null);
 
-  // Simple throttle function
-  const throttle = (func: Function, limit: number) => {
-    let inThrottle: boolean;
-    return function(this: any, ...args: any[]) {
+  // Simple throttle with proper typing
+  const throttle = <T extends (...args: any[]) => void>(
+    fn: T,
+    limit: number
+  ): ((this: ThisParameterType<T>, ...args: Parameters<T>) => void) => {
+    let inThrottle = false;
+    return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
       if (!inThrottle) {
-        func.apply(this, args);
+        fn.apply(this, args as unknown as Parameters<T>);
         inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   };

@@ -33,7 +33,7 @@ router.get('/_health', (_req, res) => {
   try {
     const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith('.json'));
     res.json({ ok: true, files });
-  } catch (e) {
+  } catch (_e) {
     res.status(500).json({ ok: false, error: 'filesystem' });
   }
 });
@@ -51,8 +51,8 @@ router.get('/:id', (req, res) => {
       throw new Error('Invalid flow data structure');
     }
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to load flow', details: String(e) });
+  } catch (_e) {
+    res.status(500).json({ error: 'Failed to load flow', details: String(_e) });
   }
 });
 
@@ -67,8 +67,8 @@ router.post('/:id', (req, res) => {
     const cleanNodes = sanitizeNodes(nodes);
     fs.writeFileSync(flowPath, JSON.stringify({ nodes: cleanNodes, edges }, null, 2));
     res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to save flow', details: String(e) });
+  } catch (_e) {
+    res.status(500).json({ error: 'Failed to save flow', details: String(_e) });
   }
 });
 

@@ -1,9 +1,9 @@
-import { Component } from 'inferno';
+import React from 'react';
 
-type Props = { children?: any };
+type Props = { children?: React.ReactNode };
 type State = { hasError: boolean; message?: string };
 
-export default class ErrorBoundary extends Component<Props, State> {
+export default class ErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false };
   static getDerivedStateFromError(err: unknown): State {
     return { hasError: true, message: String(err) };
