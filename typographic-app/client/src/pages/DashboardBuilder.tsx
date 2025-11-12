@@ -12,6 +12,7 @@ import DashboardCanvas from '../components/DashboardCanvas';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardToolbar from '../components/DashboardToolbar';
 import WidgetConfigModal from '../components/WidgetConfigModal';
+import BuilderShell from '../components/BuilderShell';
 import {
   Dashboard,
   DashboardSummary,
@@ -449,226 +450,134 @@ export default function DashboardBuilder() {
   const renderDashboardMenu = () => {
     if (!menuState.isOpen) return null;
     return (
-      <div className="dashboard-menu-overlay" style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0, 0, 0, 0.55)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1400
-      }}>
-        <div className="dashboard-menu" style={{
-          background: 'var(--bg-elev)',
-          border: '1px solid var(--control-border)',
-          borderRadius: 12,
-          padding: 24,
-          width: 'min(640px, 86vw)',
-          maxHeight: '80vh',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          boxShadow: 'var(--shadow-2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <LayoutDashboard size={18} color="var(--accent)" />
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>Dashboards</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>Manage saved layouts spanning all workflows</div>
+      <div className="dashboard-menu-overlay" onClick={handleDashboardMenuClose}>
+        <div className="dashboard-menu" onClick={(event) => event.stopPropagation()}>
+          <div className="dashboard-menu-header">
+            <div className="dashboard-menu-lead">
+              <span className="dashboard-menu-icon">
+                <LayoutDashboard size={18} />
+              </span>
+              <div className="dashboard-menu-copy">
+                <h2 className="dashboard-menu-title">Dashboards</h2>
+                <p className="dashboard-menu-subtitle">Manage saved layouts spanning all workflows</p>
               </div>
             </div>
             <button
+              type="button"
+              className="btn-secondary dashboard-menu-close"
               onClick={handleDashboardMenuClose}
-              style={{
-                background: 'var(--control-bg)',
-                border: '1px solid var(--control-border)',
-                borderRadius: 6,
-                padding: '6px 12px',
-                fontSize: 12,
-                color: 'var(--text)'
-              }}
             >
               Close
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{
-              position: 'relative',
-              flex: '1 1 220px',
-              minWidth: 180
-            }}>
-              <Search size={14} style={{
-                position: 'absolute',
-                left: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--muted)'
-              }} />
+          <div className="dashboard-menu-toolbar">
+            <div className="dashboard-menu-search">
+              <Search size={14} className="dashboard-menu-search-icon" />
               <input
+                className="dashboard-menu-search-input"
                 value={menuState.search}
                 onChange={(event) => setMenuState(prev => ({ ...prev, search: event.target.value }))}
                 placeholder="Search dashboards"
-                style={{
-                  width: '100%',
-                  padding: '8px 8px 8px 30px',
-                  background: 'var(--control-bg)',
-                  border: '1px solid var(--control-border)',
-                  borderRadius: 6,
-                  color: 'var(--text)',
-                  fontSize: 13
-                }}
               />
             </div>
-            <button
-              onClick={() => createNewDashboard('Untitled Dashboard')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 14px',
-                background: 'var(--accent)',
-                border: 'none',
-                borderRadius: 6,
-                color: '#fff',
-                fontSize: 13,
-                fontFamily: 'var(--font-mono)'
-              }}
-            >
-              <Plus size={14} /> New Dashboard
-            </button>
-            <button
-              onClick={() => loadDashboardList()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 12px',
-                background: 'var(--control-bg)',
-                border: '1px solid var(--control-border)',
-                borderRadius: 6,
-                color: 'var(--text)',
-                fontSize: 13
-              }}
-            >
-              <RefreshCw size={14} /> Refresh
-            </button>
+            <div className="dashboard-menu-toolbar-actions">
+              <button
+                type="button"
+                className="btn-primary dashboard-menu-action"
+                onClick={() => createNewDashboard('Untitled Dashboard')}
+              >
+                <Plus size={14} /> New Dashboard
+              </button>
+              <button
+                type="button"
+                className="btn-secondary dashboard-menu-action"
+                onClick={() => void loadDashboardList()}
+              >
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
           </div>
 
-          <div style={{
-            flex: 1,
-            overflow: 'auto',
-            border: '1px solid var(--control-border)',
-            borderRadius: 10,
-            padding: 6,
-            background: 'var(--bg-elev-2)'
-          }}>
+          <div className="dashboard-menu-results">
             {menuState.isLoading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, color: 'var(--muted)' }}>
-                <Loader2 size={18} className="spin" style={{ marginRight: 8 }} /> Loading dashboards...
+              <div className="dashboard-menu-loading">
+                <Loader2 size={18} className="spin" />
+                <span>Loading dashboards...</span>
               </div>
             ) : filteredSummaries.length === 0 ? (
-              <div style={{ padding: 36, textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
+              <div className="dashboard-menu-empty">
                 No dashboards found. Create a new layout to get started.
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: 8 }}>
+              <ul className="dashboard-menu-list">
                 {filteredSummaries.map(summary => {
                   const isActive = summary.id === dashboardId;
                   return (
-                    <div
+                    <li
                       key={summary.id}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: 12,
-                        padding: 14,
-                        borderRadius: 10,
-                        border: `1px solid ${isActive ? 'var(--accent)' : 'var(--control-border)'}`,
-                        background: isActive ? 'rgba(108, 92, 231, 0.12)' : 'rgba(19,19,19,0.75)',
-                        cursor: 'pointer',
-                        transition: 'border 120ms ease, background 120ms ease'
-                      }}
+                      className={`dashboard-menu-item${isActive ? ' active' : ''}`}
                       onClick={() => handleDashboardSelect(summary.id)}
                     >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: 8,
-                            background: summary.metadata?.color ?? 'rgba(108,92,231,0.22)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 14
-                          }}>
+                      <div className="dashboard-menu-item-main">
+                        <div className="dashboard-menu-item-header">
+                          <span
+                            className="dashboard-menu-item-avatar"
+                            style={{ background: summary.metadata?.color ?? 'rgba(108,92,231,0.22)' }}
+                          >
                             {summary.metadata?.icon ?? '📊'}
+                          </span>
+                          <div className="dashboard-menu-item-copy">
+                            <div className="dashboard-menu-item-title">
+                              <span className="dashboard-menu-item-name">{summary.name}</span>
+                              {summary.metadata?.favorite && (
+                                <Star size={14} className="dashboard-menu-item-favorite" />
+                              )}
+                            </div>
+                            <div className="dashboard-menu-item-meta">
+                              {summary.widgetCount} widgets • Updated {summary.lastModified.toLocaleString()}
+                            </div>
+                            {summary.metadata?.tags && summary.metadata.tags.length > 0 && (
+                              <div className="dashboard-menu-item-tags">
+                                {summary.metadata.tags.map(tag => (
+                                  <span key={tag} className="dashboard-menu-tag">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <div style={{
-                            fontWeight: 600,
-                            color: 'var(--text)',
-                            fontSize: 14
-                          }}>
-                            {summary.name}
-                          </div>
-                          {summary.metadata?.favorite && <Star size={14} color="var(--accent)" fill="var(--accent)" />}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-                          {summary.widgetCount} widgets • Updated {summary.lastModified.toLocaleString()}
-                        </div>
-                        {summary.metadata?.tags && summary.metadata.tags.length > 0 && (
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                            {summary.metadata.tags.map(tag => (
-                              <span key={tag} style={{
-                                padding: '2px 6px',
-                                borderRadius: 999,
-                                border: '1px solid var(--control-border)',
-                                fontSize: 10,
-                                color: 'var(--muted)'
-                              }}>{tag}</span>
-                            ))}
-                          </div>
+                        {summary.description && (
+                          <p className="dashboard-menu-item-description">{summary.description}</p>
                         )}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div className="dashboard-menu-item-actions">
                         <button
+                          type="button"
+                          className="btn-secondary dashboard-menu-action"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleDashboardSelect(summary.id);
-                          }}
-                          style={{
-                            padding: '6px 10px',
-                            background: 'var(--control-bg)',
-                            border: '1px solid var(--control-border)',
-                            borderRadius: 6,
-                            color: 'var(--text)',
-                            fontSize: 12
                           }}
                         >
                           Open
                         </button>
                         <button
+                          type="button"
+                          className="btn-secondary dashboard-menu-action dashboard-menu-action-danger"
                           onClick={(event) => {
                             event.stopPropagation();
                             void handleDashboardDelete(summary.id);
-                          }}
-                          style={{
-                            padding: '6px 10px',
-                            background: 'rgba(214,48,49,0.18)',
-                            border: '1px solid rgba(214,48,49,0.35)',
-                            borderRadius: 6,
-                            color: '#ff6b6b',
-                            fontSize: 12
                           }}
                         >
                           Delete
                         </button>
                       </div>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
           </div>
         </div>
@@ -693,102 +602,85 @@ export default function DashboardBuilder() {
   }
 
   return (
-    <div className="dashboard-page" style={{
-      height: '100%',
-      display: 'flex',
-      background: 'radial-gradient(1200px 600px at 80% -10%, rgba(108,92,231,0.08), transparent 40%), radial-gradient(800px 400px at -10% 110%, rgba(0,184,148,0.07), transparent 45%), var(--bg)',
-      position: 'relative'
-    }}>
-      <ToastContainer
-        position="bottom-right"
-        autoClose={2800}
-        hideProgressBar
-        closeButton={false}
-        toastClassName="toast-acrylic toast-compact"
-        className="toast-container-dashboard"
-      />
-
-      <DashboardSidebar
-        isOpen={sidebarState.isOpen}
-        onToggle={() => setSidebarState(prev => ({ ...prev, isOpen: !prev.isOpen }))}
-        selectedCategory={sidebarState.selectedCategory}
-        onCategoryChange={(category) => setSidebarState(prev => ({ ...prev, selectedCategory: category }))}
-        searchQuery={sidebarState.searchQuery}
-        onSearchChange={(query) => setSidebarState(prev => ({ ...prev, searchQuery: query }))}
-        onWidgetAdd={handleAddWidget}
-        dashboard={activeDashboard ?? cloneDefaultDashboard('Preview')}
-        workflowOutputs={workflowOutputs}
-        workflowOutputsLoading={workflowOutputsLoading}
-      />
-
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-        minWidth: 0,
-        minHeight: 0,
-        position: 'relative'
-      }}>
-        {activeDashboard && (
-          <DashboardToolbar
-            dashboard={activeDashboard}
-            isSaving={dashboardState.isSaving}
-            isDirty={dashboardState.isDirty}
-            selectedWidgetsCount={selectedWidgets.size}
-            onSave={() => saveDashboard()}
-            onNew={() => createNewDashboard('Untitled Dashboard')}
-            onExport={() => toast.info('Export coming soon')}
-            onImport={(event) => toast.info(`Import not yet implemented (${event.type})`)}
-            onDuplicate={() => selectedWidgets.forEach(handleWidgetDuplicate)}
-            onDeleteSelected={() => selectedWidgets.forEach(handleWidgetDelete)}
-            onSettings={handleDashboardSettings}
-            onOpenMenu={handleDashboardMenuOpen}
-            isRenaming={isRenaming}
-            onRenameToggle={() => setIsRenaming(value => !value)}
-            onRename={handleDashboardRename}
-            onToggleFavorite={handleDashboardMetadataToggleFavorite}
-            favorite={Boolean(activeDashboard.metadata?.favorite)}
-            workflowId={workflowId}
+    <BuilderShell
+      className="dashboard-page"
+      mainClassName="dashboard-main"
+      overlays={(
+        <>
+          <ToastContainer
+            position="bottom-right"
+            autoClose={2800}
+            hideProgressBar
+            closeButton={false}
+            toastClassName="toast-acrylic toast-compact"
+            className="toast-container-dashboard"
           />
-        )}
-
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {activeDashboard ? (
-            <DashboardCanvas
-              dashboard={activeDashboard}
-              selectedWidgets={selectedWidgets}
-              onWidgetSelect={handleWidgetSelect}
-              onWidgetUpdate={handleWidgetUpdate}
-              onWidgetDelete={handleWidgetDelete}
-              onWidgetDuplicate={handleWidgetDuplicate}
-              onWidgetConfigure={handleWidgetConfigure}
+          <DashboardSidebar
+            isOpen={sidebarState.isOpen}
+            onToggle={() => setSidebarState(prev => ({ ...prev, isOpen: !prev.isOpen }))}
+            selectedCategory={sidebarState.selectedCategory}
+            onCategoryChange={(category) => setSidebarState(prev => ({ ...prev, selectedCategory: category }))}
+            searchQuery={sidebarState.searchQuery}
+            onSearchChange={(query) => setSidebarState(prev => ({ ...prev, searchQuery: query }))}
+            onWidgetAdd={handleAddWidget}
+            dashboard={activeDashboard ?? cloneDefaultDashboard('Preview')}
+            workflowOutputs={workflowOutputs}
+            workflowOutputsLoading={workflowOutputsLoading}
+          />
+          {renderDashboardMenu()}
+          {widgetConfigTarget && activeDashboard && (
+            <WidgetConfigModal
+              widget={widgetConfigTarget}
+              isOpen={Boolean(widgetConfigTarget)}
+              onClose={handleWidgetConfigClose}
+              onSave={handleWidgetConfigSave}
+              availableOutputs={workflowOutputs}
+              workflowId={workflowId}
             />
-          ) : (
-            <div style={{
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--muted)'
-            }}>
-              No dashboard selected
-      </div>
           )}
-          </div>
-      </div>
-
-      {renderDashboardMenu()}
-
-      {widgetConfigTarget && activeDashboard && (
-        <WidgetConfigModal
-          widget={widgetConfigTarget}
-          isOpen={Boolean(widgetConfigTarget)}
-          onClose={handleWidgetConfigClose}
-          onSave={handleWidgetConfigSave}
-          availableOutputs={workflowOutputs}
+        </>
+      )}
+    >
+      {activeDashboard && (
+        <DashboardToolbar
+          dashboard={activeDashboard}
+          isSaving={dashboardState.isSaving}
+          isDirty={dashboardState.isDirty}
+          selectedWidgetsCount={selectedWidgets.size}
+          onSave={() => saveDashboard()}
+          onNew={() => createNewDashboard('Untitled Dashboard')}
+          onExport={() => toast.info('Export coming soon')}
+          onImport={(event) => toast.info(`Import not yet implemented (${event.type})`)}
+          onDuplicate={() => selectedWidgets.forEach(handleWidgetDuplicate)}
+          onDeleteSelected={() => selectedWidgets.forEach(handleWidgetDelete)}
+          onSettings={handleDashboardSettings}
+          onOpenMenu={handleDashboardMenuOpen}
+          isRenaming={isRenaming}
+          onRenameToggle={() => setIsRenaming(value => !value)}
+          onRename={handleDashboardRename}
+          onToggleFavorite={handleDashboardMetadataToggleFavorite}
+          favorite={Boolean(activeDashboard.metadata?.favorite)}
           workflowId={workflowId}
         />
       )}
-    </div>
+
+      <div className="dashboard-canvas-shell">
+        {activeDashboard ? (
+          <DashboardCanvas
+            dashboard={activeDashboard}
+            selectedWidgets={selectedWidgets}
+            onWidgetSelect={handleWidgetSelect}
+            onWidgetUpdate={handleWidgetUpdate}
+            onWidgetDelete={handleWidgetDelete}
+            onWidgetDuplicate={handleWidgetDuplicate}
+            onWidgetConfigure={handleWidgetConfigure}
+          />
+        ) : (
+          <div className="dashboard-empty-state">
+            No dashboard selected
+          </div>
+        )}
+      </div>
+    </BuilderShell>
   );
 }

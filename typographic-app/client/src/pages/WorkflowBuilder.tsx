@@ -21,6 +21,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomNode from '../components/CustomNode';
 import NodeConfigPanel from '../components/NodeConfigPanel';
+import BuilderShell from '../components/BuilderShell';
 import { type LibraryItem as BaseItem } from '../components/NodeLibrary';
 const NodeLibrary = lazy(() => import('../components/NodeLibrary'));
 import { type NodeData, verticalColors, type NodeCategory } from '../types/flow';
@@ -621,42 +622,57 @@ export default function WorkflowBuilder() {
   }, [duplicateSelected, deleteSelected, configPanelOpen, setNodes]);
 
   return (
-    <div className="workflow-page" style={{ height: '100%', width: '100%', position: 'relative', background: '#000' }}>
-    <ToastContainer
-      position="bottom-right"
-      autoClose={1600}
-      hideProgressBar
-      closeButton={false}
-      toastClassName="toast-acrylic toast-compact"
-      className="toast-container-flow"
-    />
-      <Suspense fallback={<div>Loading...</div>}>
-      <NodeLibrary
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen((v) => !v)}
-        onAdd={addFromLibrary}
-        category={libraryCategory}
-        onCategoryChange={setLibraryCategory}
-        connectivityItems={connectivityItems}
-        transformationItems={transformationItems}
-        outputItems={outputItems}
-      />
-      </Suspense>
-      <div style={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-  <div className="workflow-controls" style={{ position: 'absolute', zIndex: 5, right: 12, top: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <label style={{ fontSize: 12 }}>
+    <BuilderShell
+      className="workflow-page"
+      mainClassName="workflow-main"
+      overlays={(
+        <>
+          <ToastContainer
+            position="bottom-right"
+            autoClose={1600}
+            hideProgressBar
+            closeButton={false}
+            toastClassName="toast-acrylic toast-compact"
+            className="toast-container-flow"
+          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <NodeLibrary
+              open={sidebarOpen}
+              onToggle={() => setSidebarOpen((v) => !v)}
+              onAdd={addFromLibrary}
+              category={libraryCategory}
+              onCategoryChange={setLibraryCategory}
+              connectivityItems={connectivityItems}
+              transformationItems={transformationItems}
+              outputItems={outputItems}
+            />
+          </Suspense>
+          <NodeConfigPanel
+            selectedNode={nodes.find((n) => n.id === selectedNodeId) || null}
+            isOpen={configPanelOpen}
+            onClose={() => {
+              setConfigPanelOpen(false);
+              setSelectedNodeId(null);
+              setNodes((curr) => curr.map((n) => ({ ...n, selected: false })));
+            }}
+            onConfigChange={handleNodeConfigChange}
+          />
+        </>
+      )}
+    >
+      <div className="workflow-controls workflow-controls-floating">
+        <label className="workflow-control-label">
           Workflow ID:
           <input
             value={workflowId}
             onChange={(e) => setWorkflowId(e.target.value || 'default')}
-            style={{ marginLeft: 4, width: 100 }}
           />
         </label>
-  <button onClick={() => void saveFlow()} disabled={saving} title="Save to disk">{saving ? 'Saving…' : 'Save'}</button>
+        <button onClick={() => void saveFlow()} disabled={saving} title="Save to disk">{saving ? 'Saving…' : 'Save'}</button>
         <button onClick={() => void loadFlow()} title="Load from disk">Load</button>
       </div>
       {nodes.some((n) => n.selected) && (
-        <div style={{ position: 'absolute', zIndex: 5, left: 12, top: 12, display: 'flex', gap: 8 }}>
+        <div className="workflow-selection-actions">
           <button className="icon-btn" title="Duplicate (Ctrl+D)" onClick={duplicateSelected}>Duplicate</button>
           <button className="icon-btn" title="Delete (Del/Backspace)" onClick={deleteSelected}>Delete</button>
         </div>
@@ -675,18 +691,6 @@ export default function WorkflowBuilder() {
           onNodeContextMenu={handleNodeContextMenu}
         />
       </ReactFlowProvider>
-      <NodeConfigPanel
-        selectedNode={nodes.find((n) => n.id === selectedNodeId) || null}
-        isOpen={configPanelOpen}
-        onClose={() => {
-          setConfigPanelOpen(false);
-          setSelectedNodeId(null);
-          // Also deselect the node when closing panel
-          setNodes((curr) => curr.map((n) => ({ ...n, selected: false })));
-        }}
-        onConfigChange={handleNodeConfigChange}
-      />
-      </div>
-    </div>
+    </BuilderShell>
   );
 }

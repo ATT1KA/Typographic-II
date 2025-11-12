@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Search, X, ChevronRight, ChevronLeft, Zap, Database } from 'lucide-react';
+import { Search, X, Zap, Database } from 'lucide-react';
 import {
   Dashboard,
   WidgetCategory,
@@ -34,8 +34,10 @@ interface DashboardSidebarProps {
   workflowOutputsLoading?: boolean;
 }
 
-const SIDEBAR_WIDTH = 340;
-const APP_HEADER_HEIGHT = 84;
+function mergeClassNames(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(' ');
+}
+
 export default function DashboardSidebar({
   isOpen,
   onToggle,
@@ -94,113 +96,34 @@ export default function DashboardSidebar({
   }, [widgetsByCategory]);
 
   return (
-    <>
-      <button
-        className="sidebar-toggle"
-        onClick={onToggle}
-        style={{
-          position: 'fixed',
-          top: APP_HEADER_HEIGHT + 24,
-          left: isOpen ? SIDEBAR_WIDTH - 14 : 12,
-          zIndex: 260,
-          width: 28,
-          height: 56,
-          background: 'var(--bg-elev)',
-          border: '1px solid var(--control-border)',
-          borderRadius: isOpen ? '12px 0 0 12px' : '0 12px 12px 0',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 6px 16px rgba(0,0,0,0.28)'
-        }}
-        title={isOpen ? 'Collapse library (Ctrl+B)' : 'Expand library (Ctrl+B)'}
-      >
-        {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-      </button>
-
-      {isOpen && (
-        <aside
-          className="dashboard-sidebar"
-          style={{
-            position: 'fixed',
-            top: APP_HEADER_HEIGHT,
-            bottom: 0,
-            left: 0,
-            width: `${SIDEBAR_WIDTH}px`,
-            background: 'transparent',
-            borderRight: '1px solid var(--control-border)',
-            overflow: 'hidden',
-            zIndex: 250
-          }}
-        >
-          <div
-            style={{
-              width: `${SIDEBAR_WIDTH}px`,
-              height: '100%',
-              display: 'grid',
-              gridTemplateRows: 'auto auto 1fr auto',
-              background: 'linear-gradient(180deg, rgba(19,19,22,0.9), rgba(15,15,18,0.94))',
-              boxSizing: 'border-box',
-              borderRight: '1px solid var(--control-border)',
-              boxShadow: '0 18px 44px rgba(0,0,0,0.42)',
-              backdropFilter: 'blur(18px) saturate(135%)',
-              WebkitBackdropFilter: 'blur(18px) saturate(135%)'
-            }}
-          >
-          <header style={{
-            padding: '20px 20px 12px 24px',
-            borderBottom: '1px solid var(--control-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
+    <div className={mergeClassNames('rail', 'dashboard-rail', isOpen && 'open')}>
+      <div className="rail-backdrop" onClick={onToggle} />
+      <div className="rail-inner">
+        <div className="rail-handle">
+          <button className="rail-toggle" onClick={onToggle} title={isOpen ? 'Collapse library (Ctrl+B)' : 'Expand library (Ctrl+B)'}>
+            {isOpen ? '←' : '→'}
+          </button>
+        </div>
+        <aside className="rail-panel dashboard-rail-panel">
+          <header className="dashboard-library-header">
             <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Widget Library</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)' }}>Curated visualization modules</div>
+              <div className="dashboard-library-title">Widget Library</div>
+              <div className="dashboard-library-subtitle">Curated visualization modules</div>
             </div>
-            <button
-              onClick={onToggle}
-              style={{
-                background: 'var(--control-bg)',
-                border: '1px solid var(--control-border)',
-                borderRadius: 6,
-                color: 'var(--text)',
-                width: 28,
-                height: 28,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Close sidebar"
-            >
+            <button className="dashboard-library-close" onClick={onToggle} title="Close sidebar">
               <X size={14} />
             </button>
           </header>
 
-          <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--control-border)', display: 'grid', gap: 14 }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{
-                position: 'absolute',
-                left: 10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--muted)'
-              }} />
+          <div className="dashboard-library-filters">
+            <div className="dashboard-search">
+              <Search size={14} className="dashboard-search-icon" />
               <input
                 type="text"
                 placeholder="Search widgets..."
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 10px 8px 30px',
-                  background: 'var(--control-bg)',
-                  border: '1px solid var(--control-border)',
-                  borderRadius: 6,
-                  color: 'var(--text)',
-                  fontSize: 12
-                }}
+                className="dashboard-search-input"
               />
             </div>
             <div className="lib-tabs">
@@ -209,7 +132,7 @@ export default function DashboardSidebar({
                 return (
                   <button
                     key={category}
-                    className={`lib-tab ${isActive ? 'active' : ''}`}
+                    className={mergeClassNames('lib-tab', isActive && 'active')}
                     onClick={() => onCategoryChange(category)}
                     title={`${category} widgets`}
                   >
@@ -221,109 +144,70 @@ export default function DashboardSidebar({
             </div>
           </div>
 
-          <div style={{
-            padding: '16px 20px 20px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            overflow: 'hidden'
-          }}>
+          <div className="dashboard-library-content">
             {!hasResults ? (
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 32 }}>
-                No widgets found
-              </div>
+              <div className="dashboard-library-empty">No widgets found</div>
             ) : (
-              <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
-                <div className="rail-list" style={{ marginTop: 0, gap: 14 }}>
-                  {activeWidgets.map((widget) => (
-                    <button
-                      key={widget.id}
-                      className="rail-item widget-card"
-                      onClick={() => handleWidgetClick(widget.type)}
-                      title={widget.description}
-                    >
-                      <div className="widget-card-main">
-                        <span className="widget-card-icon">{widget.icon}</span>
-                        <div className="widget-card-copy">
-                          <span className="widget-card-title">{widget.name}</span>
-                          <span className="widget-card-description">{widget.description}</span>
-                        </div>
+              <div className="dashboard-library-list">
+                {activeWidgets.map((widget) => (
+                  <button
+                    key={widget.id}
+                    className="rail-item widget-card"
+                    onClick={() => handleWidgetClick(widget.type)}
+                    title={widget.description}
+                  >
+                    <div className="widget-card-main">
+                      <span className="widget-card-icon">{widget.icon}</span>
+                      <div className="widget-card-copy">
+                        <span className="widget-card-title">{widget.name}</span>
+                        <span className="widget-card-description">{widget.description}</span>
                       </div>
-                      <div className="widget-card-meta">
-                        <span className="widget-card-size">{widget.defaultSize}</span>
-                        <span className="widget-card-type">
-                          <Zap size={12} /> {widget.type}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                    </div>
+                    <div className="widget-card-meta">
+                      <span className="widget-card-size">{widget.defaultSize}</span>
+                      <span className="widget-card-type">
+                        <Zap size={12} /> {widget.type}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          <footer style={{
-            padding: '16px 22px 20px 24px',
-            borderTop: '1px solid var(--control-border)',
-            display: 'grid',
-            gap: 12,
-            background: 'rgba(12,12,14,0.82)'
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Workflow Outputs</div>
+          <footer className="dashboard-library-footer">
+            <div className="dashboard-outputs-heading">Workflow Outputs</div>
             {workflowOutputsLoading ? (
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Loading outputs...</div>
+              <div className="dashboard-outputs-loading">Loading outputs...</div>
             ) : workflowOutputs.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <div className="dashboard-outputs-empty">
                 No workflow outputs detected. Configure Output nodes in the Workflow builder to populate live data here.
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: 10, maxHeight: 180, overflow: 'auto' }}>
-                {workflowOutputs.map(output => (
-                  <div key={output.id} style={{
-                    border: '1px solid var(--control-border)',
-                    borderRadius: 8,
-                    padding: 10,
-                    background: 'rgba(20,20,24,0.82)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Database size={12} color="var(--accent)" />
-                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{output.label}</span>
+              <div className="dashboard-outputs-list">
+                {workflowOutputs.map((output) => (
+                  <div key={output.id} className="dashboard-output-card">
+                    <div className="dashboard-output-header">
+                      <div className="dashboard-output-label">
+                        <Database size={12} />
+                        <span>{output.label}</span>
                       </div>
-                      <span style={{ fontSize: 10, color: 'var(--muted)' }}>{output.workflowId}</span>
+                      <span className="dashboard-output-id">{output.workflowId}</span>
                     </div>
                     {output.summary && (
-                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-                        {output.summary}
-                      </div>
+                      <div className="dashboard-output-summary">{output.summary}</div>
                     )}
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+            <div className="dashboard-library-meta">
               Dashboard: {dashboard.name} • Widgets {dashboard.widgets.length}
             </div>
           </footer>
-          </div>
         </aside>
-      )}
-
-      {isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: APP_HEADER_HEIGHT,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.42)',
-            zIndex: 240
-          }}
-          onClick={onToggle}
-        />
-      )}
-    </>
+      </div>
+    </div>
   );
 }
 
