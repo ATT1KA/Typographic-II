@@ -22,6 +22,7 @@ interface DragState {
   pointerStart: { x: number; y: number };
   widgetStartPosition: { x: number; y: number };
   widgetStartSize: { width: number; height: number };
+  offset?: { x: number; y: number };
 }
 
 export default function DashboardCanvas({
@@ -109,8 +110,8 @@ export default function DashboardCanvas({
     const widget = dashboard.widgets.find(w => w.id === widgetId);
     if (!widget) return;
 
-    const startX = event.clientX - rect.left;
-    const startY = event.clientY - rect.top;
+    // const startX = event.clientX - rect.left;
+    // const startY = event.clientY - rect.top;
 
     // Check if clicking on resize handle
     const handle = (event.target as HTMLElement).closest<HTMLElement>('.widget-resize-handle');
@@ -150,8 +151,8 @@ export default function DashboardCanvas({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const currentX = event.clientX - rect.left;
-    const currentY = event.clientY - rect.top;
+    // const currentX = event.clientX - rect.left;
+    // const currentY = event.clientY - rect.top;
 
     if (dragState.mode === 'move') {
       const deltaX = event.clientX - dragState.pointerStart.x;

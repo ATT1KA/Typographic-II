@@ -69,19 +69,13 @@ export default function NodeConfigPanel({
   }
 
   return (
-    <div
-      className={`rail-right ${isOpen ? 'open' : ''}`}
-      style={{
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        right: 0,
-        width: isOpen ? 'var(--panel-w, 320px)' : 0,
-        pointerEvents: isOpen ? 'auto' : 'none',
-        zIndex: 14,
-      }}
-    >
-      <div className="rail-right-backdrop" onClick={onClose} />
+    <div className={`rail-right ${isOpen ? 'open' : ''}`}>
+      {/* Full-viewport dimming backdrop; closes on left- or right-click */}
+      <div
+        className="rail-right-backdrop"
+        onClick={onClose}
+        onContextMenu={(e) => { e.preventDefault(); onClose(); }}
+      />
       <div className="rail-right-panel">
         {/* Header */}
         <div style={{ fontWeight: 700, marginBottom: 6, color: 'var(--text)', fontSize: '14px' }}>

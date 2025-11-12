@@ -1,6 +1,9 @@
-export const errorHandler = (err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'Internal Server Error';
+import { ErrorRequestHandler } from 'express';
+
+type AppError = Error & { statusCode?: number };
+
+export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+    const { statusCode = 500, message = 'Internal Server Error' } = err as AppError;
 
     res.status(statusCode).json({
         status: 'error',

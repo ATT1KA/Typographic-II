@@ -115,6 +115,7 @@ function WorkflowCanvas({
   onConnect,
   defaultEdgeOptions,
   sidebarOpen,
+  onNodeContextMenu,
 }: {
   nodes: Node<NodeData>[];
   edges: Edge[];
@@ -125,19 +126,25 @@ function WorkflowCanvas({
   onConnect: any;
   defaultEdgeOptions: any;
   sidebarOpen: boolean;
+  onNodeContextMenu: (node: Node<NodeData>) => void;
 }) {
   const rf = useReactFlow();
   const wrapperRef = useRef<HTMLElement | null>(null);
   const minimapRef = useRef<HTMLElement | null>(null);
 
-  // Simple throttle function
-  const throttle = (func: Function, limit: number) => {
-    let inThrottle: boolean;
-    return function(this: any, ...args: any[]) {
+  // Simple throttle with proper typing
+  const throttle = <T extends (...args: any[]) => void>(
+    fn: T,
+    limit: number
+  ): ((this: ThisParameterType<T>, ...args: Parameters<T>) => void) => {
+    let inThrottle = false;
+    return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
       if (!inThrottle) {
-        func.apply(this, args);
+        fn.apply(this, args as unknown as Parameters<T>);
         inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   };
@@ -203,6 +210,10 @@ function WorkflowCanvas({
         defaultEdgeOptions={defaultEdgeOptions}
         nodeOrigin={[0, 0]}
         onNodeDragStop={onNodeDragStop}
+        onNodeContextMenu={(e, n) => {
+          e.preventDefault();
+          try { onNodeContextMenu(n as Node<NodeData>); } catch {}
+        }}
         connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeLinecap: 'round' as any }}
         fitView={false}
       >
@@ -449,16 +460,15 @@ export default function WorkflowBuilder() {
     localStorage.setItem('wfSidebarOpen', String(sidebarOpen));
   }, [sidebarOpen]);
 
-  // Track node selection and open/close config panel
+  // Close config panel when selection is cleared or when the currently-open node is no longer selected.
   useEffect(() => {
-    const selected = nodes.filter((n) => n.selected);
-    if (selected.length === 1) {
-      const nodeId = selected[0].id;
-      if (nodeId !== selectedNodeId) {
-        setSelectedNodeId(nodeId);
-        setConfigPanelOpen(true);
-      }
-    } else {
+    const selectedIds = new Set(nodes.filter((n) => n.selected).map((n) => n.id));
+    if (selectedIds.size === 0) {
+      setConfigPanelOpen(false);
+      setSelectedNodeId(null);
+      return;
+    }
+    if (selectedNodeId && !selectedIds.has(selectedNodeId)) {
       setConfigPanelOpen(false);
       setSelectedNodeId(null);
     }
@@ -479,6 +489,15 @@ export default function WorkflowBuilder() {
     style: { stroke: '#9a9a9a', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const },
     markerEnd: { type: 'arrowclosed' as const, color: '#9a9a9a' }
   }), []);
+
+  // Open config panel only via node right-click (context menu)
+  const handleNodeContextMenu = useCallback((n: Node<NodeData>) => {
+    unstable_batchedUpdates(() => {
+      setNodes((curr) => curr.map((m) => ({ ...m, selected: m.id === n.id })));
+      setSelectedNodeId(n.id);
+      setConfigPanelOpen(true);
+    });
+  }, [setNodes]);
 
   // Non-Data catalogs for NodeLibrary
   const connectivityItems: BaseItem[] = useMemo(() => [
@@ -653,6 +672,7 @@ export default function WorkflowBuilder() {
           onConnect={onConnect}
           defaultEdgeOptions={defaultEdgeOptions}
           sidebarOpen={sidebarOpen}
+          onNodeContextMenu={handleNodeContextMenu}
         />
       </ReactFlowProvider>
       <NodeConfigPanel

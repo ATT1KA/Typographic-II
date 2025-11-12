@@ -5,9 +5,6 @@ import {
   Search,
   LayoutDashboard,
   Loader2,
-  FolderOpen,
-  Copy,
-  Trash2,
   Star,
   RefreshCw
 } from 'lucide-react';
@@ -107,9 +104,6 @@ export default function DashboardBuilder() {
   const [widgetConfigTarget, setWidgetConfigTarget] = useState<WidgetConfig | null>(null);
 
   const activeDashboard = dashboardState.dashboard;
-  const gridSize = activeDashboard?.settings.gridSize ?? 48;
-
-  const dashboardName = activeDashboard?.name ?? 'Dashboard';
   const dashboardId = activeDashboard?.id ?? ''; 
 
   const filteredSummaries = useMemo(() => {
@@ -431,30 +425,7 @@ export default function DashboardBuilder() {
     }
   }, [dashboardId, createNewDashboard, loadDashboardList]);
 
-  const handleDashboardDuplicate = useCallback(() => {
-    if (!activeDashboard) return;
-    const duplicate = {
-      ...activeDashboard,
-      id: generateDashboardId(),
-      name: `${activeDashboard.name} Copy`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      widgets: activeDashboard.widgets.map(widget => ({
-        ...widget,
-        id: `${widget.id}-copy-${Date.now()}`
-      }))
-    };
-    setDashboardState({
-      dashboard: duplicate,
-      isLoading: false,
-      isSaving: false,
-      isDirty: true,
-      isNew: true
-    });
-    setSelectedWidgets(new Set());
-    setWorkflowId(duplicate.metadata?.defaultWorkflowId ?? workflowId);
-    toast.success('Dashboard duplicated');
-  }, [activeDashboard, workflowId]);
+  // Duplicate dashboard feature reserved for future use
 
   const handleDashboardMenuOpen = useCallback(() => {
     setMenuState(prev => ({ ...prev, isOpen: true }));
@@ -469,16 +440,7 @@ export default function DashboardBuilder() {
     setMenuState(prev => ({ ...prev, isOpen: false }));
   }, [loadDashboard]);
 
-  const handleWorkflowChange = useCallback((nextWorkflowId: string) => {
-    setWorkflowId(nextWorkflowId);
-    updateDashboard((dashboard) => ({
-      ...dashboard,
-      metadata: {
-        ...dashboard.metadata,
-        lastViewedWorkflowId: nextWorkflowId
-      }
-    }));
-  }, [updateDashboard]);
+  // (reserved) workflow change handler not used yet
 
   const handleDashboardSettings = useCallback(() => {
     toast.info('Dashboard settings coming soon');

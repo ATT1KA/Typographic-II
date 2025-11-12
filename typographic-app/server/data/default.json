@@ -3,8 +3,8 @@
     {
       "id": "fundraising-screening",
       "position": {
-        "x": -744,
-        "y": -1032
+        "x": -648,
+        "y": -1080
       },
       "type": "custom",
       "data": {
@@ -21,12 +21,12 @@
         "category": "Data"
       },
       "measured": {
-        "width": 384,
+        "width": 240,
         "height": 144
       },
       "selected": false,
       "dragging": true,
-      "width": 384,
+      "width": 240,
       "height": 144,
       "resizing": false
     },
@@ -51,20 +51,20 @@
         "category": "Data"
       },
       "measured": {
-        "width": 384,
-        "height": 144
+        "width": 336,
+        "height": 96
       },
       "selected": false,
       "dragging": true,
-      "width": 384,
-      "height": 144,
+      "width": 336,
+      "height": 96,
       "resizing": false
     },
     {
       "id": "bi-market-volatility",
       "position": {
-        "x": 216,
-        "y": -840
+        "x": 72,
+        "y": -936
       },
       "type": "custom",
       "data": {
@@ -81,18 +81,18 @@
         "category": "Data"
       },
       "measured": {
-        "width": 384,
-        "height": 144
+        "width": 192,
+        "height": 96
       },
       "selected": false,
       "dragging": true,
-      "width": 384,
-      "height": 144
+      "width": 192,
+      "height": 96
     },
     {
       "id": "connectivity-causal-router-1758355003726",
       "position": {
-        "x": 168,
+        "x": 72,
         "y": -600
       },
       "type": "custom",
@@ -124,7 +124,7 @@
     {
       "id": "connectivity-correlation-router-1758356131568",
       "position": {
-        "x": -216,
+        "x": -264,
         "y": -936
       },
       "type": "custom",
@@ -156,8 +156,8 @@
     {
       "id": "output-dashboard-generator-1758362373789",
       "position": {
-        "x": 792,
-        "y": -888
+        "x": 360,
+        "y": -1032
       },
       "type": "custom",
       "data": {
@@ -179,19 +179,19 @@
         }
       },
       "measured": {
-        "width": 384,
-        "height": 144
+        "width": 240,
+        "height": 96
       },
       "selected": false,
       "dragging": true,
-      "width": 384,
-      "height": 144
+      "width": 240,
+      "height": 96
     },
     {
       "id": "output-report-compiler-1758441361913",
       "position": {
-        "x": 792,
-        "y": -648
+        "x": 360,
+        "y": -696
       },
       "type": "custom",
       "data": {
@@ -205,13 +205,13 @@
         }
       },
       "measured": {
-        "width": 384,
-        "height": 144
+        "width": 192,
+        "height": 96
       },
       "selected": false,
       "dragging": true,
-      "width": 384,
-      "height": 144
+      "width": 192,
+      "height": 96
     }
   ],
   "edges": [
