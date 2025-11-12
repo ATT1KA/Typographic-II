@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom/vitest';
 import App from './App';
 
 test('renders app', () => {
-  render(<BrowserRouter><App /></BrowserRouter>);
-  expect(screen.getByText('Typographic')).toBeInTheDocument();
+  render(<App />);
+  expect(screen.getByText(/Home - Typographic Workflow Builder/i)).toBeInTheDocument();
 });
